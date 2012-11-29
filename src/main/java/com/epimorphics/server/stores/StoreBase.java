@@ -7,12 +7,15 @@
  *
  *****************************************************************/
 
-package com.epimorphics.server.core;
+package com.epimorphics.server.stores;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.epimorphics.server.core.Indexer;
+import com.epimorphics.server.core.Service;
+import com.epimorphics.server.core.Store;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -38,9 +41,9 @@ public abstract class StoreBase implements Store, Service {
         // TODO parse indexes from config
     }
 
-    abstract void doAddGraph(String graphname, Model graph);
-    abstract void doUpdateGraph(String graphname, Model graph);
-    abstract void doDeleteGraph(String graphname);
+    protected abstract void doAddGraph(String graphname, Model graph);
+    protected abstract void doUpdateGraph(String graphname, Model graph);
+    protected abstract void doDeleteGraph(String graphname);
 
     @Override
     public void addGraph(String graphname, Model graph) {

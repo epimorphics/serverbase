@@ -26,7 +26,8 @@ import com.epimorphics.util.EpiException;
 
 /**
  * Controller object which interprets the server configuration and
- * instantiates the requested services.
+ * instantiates the requested services. Supports a distinguished
+ * service "store" for the default shared RDF dataset.
  *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
@@ -37,8 +38,12 @@ public class ServiceConfig implements ServletContextListener {
     public static final String CONFIG_PREFIX = "config.";
     public static final String CLASSNAME_PARAM = "class";
 
+    public static final String STORE_SERVICENAME = "store";
+
     protected static Map<String, Service> services = new HashMap<String, Service>();
     protected static String filebase = null;
+
+    protected static Store defaultStore;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -62,6 +67,7 @@ public class ServiceConfig implements ServletContextListener {
                 service.postInit();
             }
         }
+        defaultStore = null;
     }
 
     synchronized public List<String> getServiceNames() {
@@ -70,6 +76,19 @@ public class ServiceConfig implements ServletContextListener {
 
     synchronized public Service getService(String name ) {
         return services.get(name);
+    }
+
+    public Store getDefaultStore() {
+        if (defaultStore == null) {
+            Service defaultStoreService = getService(STORE_SERVICENAME);
+            if (defaultStoreService != null && defaultStoreService instanceof Store) {
+                defaultStore = (Store) defaultStoreService;
+            }
+        }
+        if (defaultStore == null) {
+            throw new EpiException("No default store defined");
+        }
+        return defaultStore;
     }
 
     /**

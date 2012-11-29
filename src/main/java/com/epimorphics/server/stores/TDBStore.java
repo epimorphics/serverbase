@@ -7,10 +7,11 @@
  *
  *****************************************************************/
 
-package com.epimorphics.server.core;
+package com.epimorphics.server.stores;
 
 import java.util.Map;
 
+import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -50,6 +51,7 @@ public class TDBStore extends StoreBase {
     }
 
     @Override
+    protected
     void doAddGraph(String graphname, Model graph) {
         lockWrite();
         try {
@@ -60,6 +62,7 @@ public class TDBStore extends StoreBase {
     }
 
     @Override
+    protected
     void doUpdateGraph(String graphname, Model graph) {
         lockWrite();
         try {
@@ -72,6 +75,7 @@ public class TDBStore extends StoreBase {
     }
 
     @Override
+    protected
     void doDeleteGraph(String graphname) {
         lockWrite();
         try {
