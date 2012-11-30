@@ -11,6 +11,9 @@ package com.epimorphics.server.stores;
 
 import java.util.Map;
 
+import org.apache.jena.fuseki.server.DatasetRef;
+import org.apache.jena.fuseki.server.DatasetRegistry;
+
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.util.EpiException;
 import com.epimorphics.util.FileUtil;
@@ -26,14 +29,17 @@ import com.hp.hpl.jena.tdb.TDBFactory;
  * TDB store sites, use ${webapp} in the parameter value to reference the directory
  * where the webapp is installed.</p>
  *
- * <p>Set "union-default=true" to set the (currently GLOBAL) flag to make
- * sparql queries see the defaul graph as the union of all the named graphs.</p>
+ * <p>Set "union=true" to set the (currently GLOBAL) flag to make
+ * sparql queries see the default graph as the union of all the named graphs.</p>
+ *
+ * <p>Set "ep={ds}" to register a fuseki query endpoint /ds/query.</p>
  *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class TDBStore extends StoreBase {
     public static final String LOCATION_PARAM = "location";
-    public static final String UNION_PARAM    = "union-default";
+    public static final String UNION_PARAM    = "union";
+    public static final String QUERY_ENDPOINT_PARAM    = "ep";
 
     protected Dataset dataset;
 
@@ -49,6 +55,17 @@ public class TDBStore extends StoreBase {
 
         if ("true".equalsIgnoreCase( config.get(UNION_PARAM) )) {
             TDB.getContext().set(TDB.symUnionDefaultGraph, true) ;
+        }
+
+        String qEndpoint = config.get(QUERY_ENDPOINT_PARAM);
+        if (qEndpoint != null) {
+            String base = "/" + qEndpoint;
+            DatasetRef ds = new DatasetRef();
+            ds.name = qEndpoint;
+            ds.queryEP.add( base + "/query" );
+            ds.dataset = dataset.asDatasetGraph();
+
+            DatasetRegistry.get().put(base, ds);
         }
     }
 
