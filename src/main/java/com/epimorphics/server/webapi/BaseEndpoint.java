@@ -86,7 +86,7 @@ public class BaseEndpoint {
      * and adds it to the a named graph within the default store.
      */
     public void putToDefaultStore(HttpHeaders hh, InputStream body, String graphname) {
-        getDefaultStore().addGraph(graphname, getSafeBodyModel(hh, body));
+        getDefaultStore().updateGraph(graphname, getSafeBodyModel(hh, body));
     }
 
 
