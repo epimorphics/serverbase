@@ -40,13 +40,16 @@ public class ServiceConfig implements ServletContextListener {
 
     public static final String STORE_SERVICENAME = "store";
 
-    protected static Map<String, Service> services = new HashMap<String, Service>();
-    protected static String filebase = null;
+    protected Map<String, Service> services = new HashMap<String, Service>();
+    protected String filebase = null;
 
-    protected static Store defaultStore;
+    protected Store defaultStore;
+
+    public static ServiceConfig theConfig;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
+        theConfig = this;           // Keep the last initialized version as the default global config
         ServletContext context = sce.getServletContext();
         filebase =  withoutTrailingSlash(context.getRealPath("/"));
 
@@ -68,6 +71,10 @@ public class ServiceConfig implements ServletContextListener {
             }
         }
         defaultStore = null;
+    }
+
+    public static ServiceConfig get() {
+        return theConfig;
     }
 
     synchronized public List<String> getServiceNames() {
@@ -100,7 +107,7 @@ public class ServiceConfig implements ServletContextListener {
             throw new EpiException("No classname found for " + serviceName);
         }
         try {
-            Service service = (Service) Class.forName( segments[0] ).newInstance();
+            Service service = (Service) Class.forName( segments[0].trim() ).newInstance();
             Map<String, String> config = new HashMap<String, String>();
             for (int i = 1; i < segments.length; i++) {
                 String param = segments[i].trim();
@@ -113,11 +120,11 @@ public class ServiceConfig implements ServletContextListener {
             service.init(config);
             return service;
         } catch (Exception e ) {
-            throw new EpiException("Failed to instantiate service " + serviceName);
+            throw new EpiException("Failed to instantiate service " + serviceName, e);
         }
     }
 
-    public static String expandFileLocation(String location) {
+    public String expandFileLocation(String location) {
         return location.replace(WEBAPP_MACRO, filebase );
     }
 

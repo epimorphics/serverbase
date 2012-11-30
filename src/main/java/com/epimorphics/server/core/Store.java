@@ -30,4 +30,9 @@ public interface Store {
     public void addIndexer(Indexer indexer);
 
     public Dataset asDataset();
+
+    public void lock();
+    public void lockWrite();
+    public void unlock();
+
 }

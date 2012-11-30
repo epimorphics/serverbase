@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.util.EpiException;
+import com.epimorphics.util.FileUtil;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.tdb.TDB;
@@ -42,7 +43,8 @@ public class TDBStore extends StoreBase {
         if (location == null) {
             throw new EpiException("No location defined for TDB");
         }
-        location = ServiceConfig.expandFileLocation(location);
+        location = ServiceConfig.get().expandFileLocation(location);
+        FileUtil.ensureDir(location);
         dataset = TDBFactory.createDataset( location );
 
         if ("true".equalsIgnoreCase( config.get(UNION_PARAM) )) {
