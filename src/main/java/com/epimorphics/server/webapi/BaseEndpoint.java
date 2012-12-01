@@ -10,7 +10,6 @@
 package com.epimorphics.server.webapi;
 
 import static com.epimorphics.webapi.marshalling.RDFXMLMarshaller.MIME_RDFXML;
-import static com.epimorphics.webapi.marshalling.TurtleMarshaller.MIME_TURTLE;
 
 import java.io.InputStream;
 
@@ -32,6 +31,8 @@ import com.hp.hpl.jena.util.FileUtils;
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class BaseEndpoint {
+    
+    public static final String MIME_TURTLE = "text/turtle";
 
     protected @Context ServletContext context;
     protected @Context UriInfo uriInfo;
