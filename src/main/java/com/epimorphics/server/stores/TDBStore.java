@@ -9,10 +9,14 @@
 
 package com.epimorphics.server.stores;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 import org.apache.jena.fuseki.server.DatasetRef;
 import org.apache.jena.fuseki.server.DatasetRegistry;
+import org.openjena.riot.Lang;
+import org.openjena.riot.WebContent;
 
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.util.EpiException;
@@ -80,18 +84,6 @@ public class TDBStore extends StoreBase {
         }
     }
 
-    @Override
-    protected
-    void doUpdateGraph(String graphname, Model graph) {
-        lockWrite();
-        try {
-            Model store = dataset.getNamedModel(graphname);
-            store.removeAll();
-            store.add( graph );
-        } finally {
-            unlock();
-        }
-    }
 
     @Override
     protected
@@ -108,6 +100,25 @@ public class TDBStore extends StoreBase {
     @Override
     public Dataset asDataset() {
         return dataset;
+    }
+
+    @Override
+    protected void doAddGraph(String graphname, InputStream input,
+            String mimeType) {
+        Lang lang = WebContent.contentTypeToLang(mimeType);
+        if (lang == null) {
+            throw new EpiException("Cannot read MIME type: " + mimeType);
+        }
+        lockWrite();
+        try {
+            dataset.getNamedModel(graphname).read(input, graphname, lang.getName());
+            try { input.close(); } catch (IOException eio) {}
+        } catch (Exception e) {
+            abort();
+            throw new EpiException(e);
+        } finally {
+            unlock();
+        }
     }
 
 }

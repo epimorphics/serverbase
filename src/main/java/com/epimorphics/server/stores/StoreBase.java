@@ -9,6 +9,7 @@
 
 package com.epimorphics.server.stores;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Map;
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.Store;
+import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -42,7 +44,7 @@ public abstract class StoreBase implements Store, Service {
     }
 
     protected abstract void doAddGraph(String graphname, Model graph);
-    protected abstract void doUpdateGraph(String graphname, Model graph);
+    protected abstract void doAddGraph(String graphname, InputStream input, String mimeType);
     protected abstract void doDeleteGraph(String graphname);
 
     @Override
@@ -55,10 +57,11 @@ public abstract class StoreBase implements Store, Service {
 
     @Override
     public void updateGraph(String graphname, Model graph) {
+        doDeleteGraph(graphname);
         for (Indexer i : indexers) {
             i.updateGraph(graphname, graph);
         }
-        doUpdateGraph(graphname, graph);
+        doAddGraph(graphname, graph);
     }
 
     @Override
@@ -67,6 +70,39 @@ public abstract class StoreBase implements Store, Service {
             i.deleteGraph(graphname);
         }
         doDeleteGraph(graphname);
+    }
+
+    @Override
+    public void addGraph(String graphname, InputStream input, String mimeType) {
+        doAddGraph(graphname, input, mimeType);
+        lock();
+        try {
+            Model graph = asDataset().getNamedModel(graphname);
+            for (Indexer i : indexers) {
+                i.addGraph(graphname, graph);
+            }
+        } finally {
+            unlock();
+        }
+
+    }
+
+    @Override
+    public void updateGraph(String graphname, InputStream input, String mimeType) {
+        doDeleteGraph(graphname);
+        doAddGraph(graphname, input, mimeType);
+        lock();
+        try {
+            Model graph = asDataset().getNamedModel(graphname);
+            for (Indexer i : indexers) {
+                i.addGraph(graphname, graph);
+            }
+        } finally {
+            unlock();
+        }
+        
+        deleteGraph(graphname);
+        addGraph(graphname, input, mimeType);
     }
 
     @Override
@@ -108,6 +144,20 @@ public abstract class StoreBase implements Store, Service {
         if (dataset.supportsTransactions()) {
             if (inWrite) {
                 dataset.commit();
+                inWrite = false;
+            }
+            dataset.end();
+        } else {
+            dataset.asDatasetGraph().getLock().leaveCriticalSection();
+        }
+    }
+
+    /** Unlock the dataset, aborting the transaction. Only useful if the dataset is transactional */
+    public synchronized void abort() {
+        Dataset dataset = asDataset();
+        if (dataset.supportsTransactions()) {
+            if (inWrite) {
+                dataset.abort();
                 inWrite = false;
             }
             dataset.end();

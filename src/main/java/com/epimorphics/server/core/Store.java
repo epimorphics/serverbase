@@ -9,12 +9,14 @@
 
 package com.epimorphics.server.core;
 
+import java.io.InputStream;
+
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.rdf.model.Model;
 
 /**
  * Simple RDF store abstraction which supports plug-in indexers triggered by
- * bulk updates. Is it up to the implementation how to graph the graph units, normally
+ * bulk updates. Is it up to the implementation how to store the graph units, normally
  * these will be named graphs within a DataSet.
  *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
@@ -22,8 +24,10 @@ import com.hp.hpl.jena.rdf.model.Model;
 public interface Store {
 
     public void addGraph(String graphname, Model graph);
+    public void addGraph(String graphname, InputStream input, String mimeType);
 
     public void updateGraph(String graphname, Model graph);
+    public void updateGraph(String graphname, InputStream input, String mimeType);
 
     public void deleteGraph(String graphname);
 
