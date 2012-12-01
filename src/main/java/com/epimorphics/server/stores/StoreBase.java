@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
+import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.query.Dataset;
@@ -29,18 +30,33 @@ import com.hp.hpl.jena.shared.Lock;
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public abstract class StoreBase implements Store, Service {
+    
+    public static final String INDEXER_PARAM = "indexer";
 
     protected volatile List<Indexer> indexers = new ArrayList<Indexer>();
     protected boolean inWrite = false;
 
+    protected Map<String, String> config;
+    
     @Override
     public void init(Map<String, String> config) {
-        // No default initialisation
+        // No default init
+        this.config = config;
     }
 
     @Override
     public void postInit() {
-        // TODO parse indexes from config
+        String indexerNames = config.get(INDEXER_PARAM);
+        if (indexers != null) {
+            for (String indexerName : indexerNames.split(",")) {
+                Service indexer = ServiceConfig.get().getService(indexerName);
+                if (indexer instanceof Indexer) {
+                    indexers.add( (Indexer) indexer );
+                } else {
+                    throw new EpiException("Configured indexer doesn't seem to be an Indexer: " + indexerName);
+                }
+            }
+        }
     }
 
     protected abstract void doAddGraph(String graphname, Model graph);

@@ -1,0 +1,8 @@
+
+## Schemagen command
+
+Copy/paste of schemagen maven plugin didn't seem to work so:
+
+     schemagen --ontology -i src/main/vocabs/li.ttl --package com.epimorphics.vocabs -o src/main/java
+
+     
