@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.ServletContext;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -101,7 +103,7 @@ public class LuceneIndex implements Indexer, Service {
     protected Directory indexDir;
     
     @Override
-    public void init(Map<String, String> config) {
+    public void init(Map<String, String> config, ServletContext context) {
         try {
             this.config = config;
         

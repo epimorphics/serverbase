@@ -11,6 +11,8 @@ package com.epimorphics.server.core;
 
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+
 /**
  * Generic notion of a service that can be instantiated as part of a web configuration.
  * Implementations should have a null constructor and perform all initialisation
@@ -20,7 +22,7 @@ import java.util.Map;
  */
 public interface Service {
 
-    void init(Map<String, String> config);
+    void init(Map<String, String> config, ServletContext context);
 
     void postInit();
 }

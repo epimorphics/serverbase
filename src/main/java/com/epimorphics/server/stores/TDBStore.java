@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+
 import org.apache.jena.fuseki.server.DatasetRef;
 import org.apache.jena.fuseki.server.DatasetRegistry;
 import org.openjena.riot.Lang;
@@ -48,8 +50,8 @@ public class TDBStore extends StoreBase {
     protected Dataset dataset;
 
     @Override
-    public void init(Map<String, String> config) {
-        super.init(config);
+    public void init(Map<String, String> config, ServletContext context) {
+        super.init(config, context);
         String location = config.get(LOCATION_PARAM);
         if (location == null) {
             throw new EpiException("No location defined for TDB");

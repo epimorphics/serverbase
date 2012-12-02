@@ -94,7 +94,7 @@ public class BaseEndpoint {
     }
 
     /**
-     * Find the given lucence index
+     * Find the given lucene index
      */
     public LuceneIndex getIndex(String name) {
         Service s = ServiceConfig.get().getService(name);

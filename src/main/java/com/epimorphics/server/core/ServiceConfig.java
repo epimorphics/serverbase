@@ -22,6 +22,8 @@ import javax.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.epimorphics.server.indexers.LuceneIndex;
+import com.epimorphics.server.templates.VelocityRender;
 import com.epimorphics.util.EpiException;
 
 /**
@@ -58,7 +60,7 @@ public class ServiceConfig implements ServletContextListener {
             String param = paramNames.nextElement();
             if (param.startsWith(CONFIG_PREFIX)) {
                 String serviceName = param.substring(CONFIG_PREFIX.length());
-                Service service = parseInit(serviceName, context.getInitParameter(param));
+                Service service = parseInit(serviceName, context.getInitParameter(param), context);
                 services.put(serviceName, service);
             }
         }
@@ -97,11 +99,29 @@ public class ServiceConfig implements ServletContextListener {
         }
         return defaultStore;
     }
+    
+    public LuceneIndex getDefaultIndex() {
+        return getFirst(LuceneIndex.class);
+    }
 
+    public VelocityRender getDefaultRenderer() {
+        return getFirst(VelocityRender.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getFirst(Class<T> cls) {
+        for (Service s : services.values()) {
+            if (cls.isInstance(s)) {
+                return (T)s;
+            }
+        }
+        return null;
+    }
+    
     /**
      * Parse a component init string "class-name,p1=val1,p2=val2,..." and instantiate the service
      */
-    private Service parseInit(String serviceName, String init) {
+    private Service parseInit(String serviceName, String init, ServletContext context) {
         String[] segments = init.split(",");
         if (segments.length == 0) {
             throw new EpiException("No classname found for " + serviceName);
@@ -117,7 +137,7 @@ public class ServiceConfig implements ServletContextListener {
                 }
                 config.put(split[0].trim(), split[1].trim());
             }
-            service.init(config);
+            service.init(config, context);
             return service;
         } catch (Exception e ) {
             throw new EpiException("Failed to instantiate service " + serviceName, e);

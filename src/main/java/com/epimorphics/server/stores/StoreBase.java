@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceConfig;
@@ -39,7 +41,7 @@ public abstract class StoreBase implements Store, Service {
     protected Map<String, String> config;
     
     @Override
-    public void init(Map<String, String> config) {
+    public void init(Map<String, String> config, ServletContext context) {
         this.config = config;
     }
 

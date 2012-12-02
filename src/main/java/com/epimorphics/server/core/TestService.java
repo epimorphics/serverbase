@@ -11,10 +11,12 @@ package com.epimorphics.server.core;
 
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+
 public class TestService implements Service {
 
     @Override
-    public void init(Map<String, String> config) {
+    public void init(Map<String, String> config, ServletContext context) {
         System.out.println("Test service init called");
         for (String conf : config.keySet()) {
             System.out.println(" " + conf + " = " + config.get(conf));
