@@ -34,6 +34,8 @@ public interface Store {
     public void addIndexer(Indexer indexer);
 
     public Dataset asDataset();
+    
+    public Model getUnionModel();
 
     public void lock();
     public void lockWrite();

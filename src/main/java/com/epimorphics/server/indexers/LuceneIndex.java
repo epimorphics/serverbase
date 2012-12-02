@@ -17,7 +17,6 @@ import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.DerefBytesDocValuesField;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongField;
@@ -36,7 +35,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 
 import com.epimorphics.server.core.Indexer;
@@ -252,7 +250,9 @@ public class LuceneIndex implements Indexer, Service {
                 doc.add( new TextField(FIELD_LABEL, valueStr, Field.Store.NO) );
             } else if (valueProps.contains(p) || (indexAll && !ignoreProps.contains(p))) {
                 if (value.isURIResource()) {
-                    doc.add( new DerefBytesDocValuesField(p.getURI(), new BytesRef(value.asResource().getURI())) );
+                    doc.add( new StringField(p.getURI(), value.asResource().getURI(), Field.Store.YES) );
+                    // Alternative below would share storage of URIs but only allows per document field
+//                    doc.add( new DerefBytesDocValuesField(p.getURI(), new BytesRef(value.asResource().getURI())) );
                 } else if (value.isLiteral()) {
                     Literal lvalue = value.asLiteral();
                     Object jvalue = lvalue.getValue();

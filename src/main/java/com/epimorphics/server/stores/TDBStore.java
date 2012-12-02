@@ -122,4 +122,9 @@ public class TDBStore extends StoreBase {
         }
     }
 
+    @Override
+    public Model getUnionModel() {
+        return dataset.getNamedModel("urn:x-arq:UnionGraph");
+    }
+
 }

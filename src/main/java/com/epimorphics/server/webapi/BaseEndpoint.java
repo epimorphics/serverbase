@@ -19,8 +19,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
+import com.epimorphics.server.indexers.LuceneIndex;
+import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.util.FileUtils;
@@ -90,5 +93,16 @@ public class BaseEndpoint {
         getDefaultStore().updateGraph(graphname, getSafeBodyModel(hh, body));
     }
 
-
+    /**
+     * Find the given lucence index
+     */
+    public LuceneIndex getIndex(String name) {
+        Service s = ServiceConfig.get().getService(name);
+        if (s != null && s instanceof LuceneIndex) {
+            return (LuceneIndex)s;
+        } else {
+            throw new EpiException("Can't find indexer");
+        }
+    }
+    
 }
