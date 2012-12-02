@@ -40,7 +40,6 @@ public abstract class StoreBase implements Store, Service {
     
     @Override
     public void init(Map<String, String> config) {
-        // No default init
         this.config = config;
     }
 

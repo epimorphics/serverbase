@@ -49,6 +49,7 @@ public class TDBStore extends StoreBase {
 
     @Override
     public void init(Map<String, String> config) {
+        super.init(config);
         String location = config.get(LOCATION_PARAM);
         if (location == null) {
             throw new EpiException("No location defined for TDB");
