@@ -60,6 +60,7 @@ import com.hp.hpl.jena.util.FileManager;
  *  <ul>
  *   <li>request - the servlet request object</li>
  *   <li>response - the servlet response object </li>
+ *   <li>root - the root context path for the servlet </li>
  *   <li>lib - a java utility library</li>
  *   <li>dataset - wrapper version of the default store</li>
  *   <li>model - wrapper version of the union model of the default store</li>
@@ -199,6 +200,11 @@ public class VelocityRender extends ServiceBase implements Service {
         }
         vc.put( "request", request );
         vc.put( "response", response );
+        String root = request.getServletContext().getContextPath();
+        if (root.equals("/")) {
+            root = "";
+        }
+        vc.put( "root", root); 
         vc.put( "lib", Lib.theLib);
         for (String serviceName : ServiceConfig.get().getServiceNames()) {
             vc.put(serviceName, ServiceConfig.get().getService(serviceName));
