@@ -32,9 +32,10 @@ public interface Store {
     public void deleteGraph(String graphname);
 
     public void addIndexer(Indexer indexer);
+    public void addMutator(Mutator mutator);
 
     public Dataset asDataset();
-    
+
     public Model getUnionModel();
 
     public void lock();

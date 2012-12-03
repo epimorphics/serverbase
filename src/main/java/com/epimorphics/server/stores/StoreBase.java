@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.epimorphics.server.core.Indexer;
+import com.epimorphics.server.core.Mutator;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
@@ -32,8 +33,10 @@ import com.hp.hpl.jena.shared.Lock;
 public abstract class StoreBase extends ServiceBase implements Store, Service {
 
     public static final String INDEXER_PARAM = "indexer";
+    public static final String MUTATOR_PARAM = "mutator";
 
     protected volatile List<Indexer> indexers = new ArrayList<Indexer>();
+    protected volatile List<Mutator> mutators = new ArrayList<Mutator>();
     protected boolean inWrite = false;
 
     @Override
@@ -46,6 +49,17 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
                     indexers.add( (Indexer) indexer );
                 } else {
                     throw new EpiException("Configured indexer doesn't seem to be an Indexer: " + indexerName);
+                }
+            }
+        }
+        String mutatorNames = config.get(MUTATOR_PARAM);
+        if (indexers != null) {
+            for (String name : mutatorNames.split(",")) {
+                Service mutator = ServiceConfig.get().getService(name);
+                if (mutator instanceof Mutator) {
+                    mutators.add( (Mutator) mutator );
+                } else {
+                    throw new EpiException("Configured indexer doesn't seem to be an Indexer: " + name);
                 }
             }
         }
@@ -103,7 +117,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         try {
             Model graph = asDataset().getNamedModel(graphname);
             for (Indexer i : indexers) {
-                i.addGraph(graphname, graph);
+                i.updateGraph(graphname, graph);
             }
         } finally {
             unlock();
@@ -117,8 +131,16 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     synchronized public void addIndexer(Indexer indexer) {
         List<Indexer> newIndexes = new ArrayList<Indexer>( indexers );
         newIndexes.add(indexer);
-        // This should be and atomics switch of lists so no need to sync the methods that use the list
+        // This should be an atomics switch of lists so no need to sync the methods that use the list
         indexers = newIndexes;
+    }
+
+    @Override
+    synchronized public void addMutator(Mutator mutator) {
+        List<Mutator> newl= new ArrayList<Mutator>( mutators );
+        newl.add(mutator);
+        // This should be an atomics switch of lists so no need to sync the methods that use the list
+        mutators = newl;
     }
 
     @Override
