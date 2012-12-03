@@ -2,7 +2,7 @@
  * File:        LuceneIndex.java
  * Created by:  Dave Reynolds
  * Created on:  1 Dec 2012
- * 
+ *
  * (c) Copyright 2012, Epimorphics Limited
  *
  *****************************************************************/
@@ -41,7 +41,7 @@ import org.apache.lucene.util.Version;
 
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
-import com.epimorphics.server.core.ServiceConfig;
+import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.util.EpiException;
 import com.epimorphics.util.FileUtil;
 import com.epimorphics.vocabs.Li;
@@ -59,7 +59,7 @@ import com.hp.hpl.jena.vocabulary.RDF;
 /**
  * Text index for entities in a store.
  * <p>
- * An entity is any resource in the graph that has one or more explicit types. 
+ * An entity is any resource in the graph that has one or more explicit types.
  * </p>
  * <p>
  * There are three types of index fields supported:
@@ -69,7 +69,7 @@ import com.hp.hpl.jena.vocabulary.RDF;
  *  <li>facet fields - which are indexed to support faceted search</li>
  * </ul>
  * Node values are either resources (uses shared ByteRef of the URI), numbers (any
- * numeric literal which fits in a long is indexed as a Long) or literal (which are 
+ * numeric literal which fits in a long is indexed as a Long) or literal (which are
  * indexed as non-shared lexical forms).
  * </p>
  * <p>
@@ -79,48 +79,42 @@ import com.hp.hpl.jena.vocabulary.RDF;
  *  <li>config  - RDF file giving the index configuration</li>
  * </ul>
  * </p>
- * 
+ *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 
 // TODO implement the faceted search indexing support
 
-public class LuceneIndex implements Indexer, Service {
+public class LuceneIndex extends ServiceBase implements Indexer, Service {
     public static final String LOCATION_PARAM = "location";
     public static final String CONFIG_PARAM = "config";
 
     public static final String FIELD_URI = "uri";
     public static final String FIELD_GRAPH = "graph";
     public static final String FIELD_LABEL = "label";
-    
-    protected Map<String, String> config;
+
     protected boolean indexAll;
     protected Set<Resource> labelProps = new HashSet<Resource>();
     protected Set<Resource> labelOnlyProps = new HashSet<Resource>();
     protected Set<Resource> ignoreProps = new HashSet<Resource>();
     protected Set<Resource> valueProps = new HashSet<Resource>();
-    
+
     protected Directory indexDir;
-    
+
     @Override
     public void init(Map<String, String> config, ServletContext context) {
+        super.init(config, context);
         try {
-            this.config = config;
-        
             String indexLocation = getRequiredFileParam(LOCATION_PARAM);
             FileUtil.ensureDir(indexLocation);
             indexDir = FSDirectory.open( new File(indexLocation) );
-            
+
             String configLocation = getRequiredFileParam(CONFIG_PARAM);
             Model configModel = FileManager.get().loadModel(configLocation);
             analyseConfigModel( configModel );
         } catch (Exception e) {
             throw new EpiException(e);
         }
-    }
-    
-    @Override
-    public void postInit() {
     }
 
     @Override
@@ -166,11 +160,11 @@ public class LuceneIndex implements Indexer, Service {
             throw new EpiException(e);
         }
     }
-    
+
     /**
      * Search the index for entities which match a lucene query using the standard lucene
      * <a href="http://lucene.apache.org/core/4_0_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#package_description">synta</a>.
-     * Fields names indexed from the RDF will be URIs and so characters like ':' and '/' need to be escaped in the query string. 
+     * Fields names indexed from the RDF will be URIs and so characters like ':' and '/' need to be escaped in the query string.
      */
     public LuceneResult[] search(String query, int offset, int maxResults) {
         Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_40);
@@ -181,18 +175,18 @@ public class LuceneIndex implements Indexer, Service {
             throw new EpiException(e);
         }
     }
-    
-    
+
+
     private void analyseConfigModel(Model configModel) {
         ResIterator ri = configModel.listResourcesWithProperty(RDF.type, Li.Config);
         if (ri.hasNext()) {
             Resource configR = ri.next();
-            
+
             Statement indexAllS = configR.getProperty(Li.indexAll);
             if (indexAllS != null && indexAllS.getObject().isLiteral()) {
                 indexAll = indexAllS.getObject().asLiteral().getBoolean();
             }
-            
+
             extractSet(configR, Li.ignoreProp, ignoreProps);
             extractSet(configR, Li.labelOnlyProp, labelOnlyProps);
             extractSet(configR, Li.labelProp, labelProps);
@@ -201,7 +195,7 @@ public class LuceneIndex implements Indexer, Service {
             throw new EpiException("Can't find root config resource for Lucene indexer");
         }
     }
-    
+
     private void extractSet(Resource configR, Property p, Set<Resource> set) {
         StmtIterator si = configR.listProperties(p);
         while (si.hasNext()) {
@@ -212,14 +206,6 @@ public class LuceneIndex implements Indexer, Service {
         }
     }
 
-    private String getRequiredFileParam(String param) {
-        String location = config.get(param);
-        if (location == null) {
-            throw new EpiException("Missing requried configuration parameter: " + param);
-        }
-        return ServiceConfig.get().expandFileLocation(location);
-    }
-    
     protected void indexGraph(String graphname, Model graph, boolean update) {
         try {
             IndexWriter iwriter = getIndexWriter();
@@ -232,7 +218,7 @@ public class LuceneIndex implements Indexer, Service {
             throw new EpiException(e);
         }
     }
-    
+
     private void indexEntity(IndexWriter iwriter, boolean update, String graphname, Resource entity) throws IOException {
         if (entity.isAnon()) return;
         Document doc = new Document();
@@ -264,7 +250,7 @@ public class LuceneIndex implements Indexer, Service {
                         doc.add( new TextField(p.getURI(), valueStr, Field.Store.YES) );
                     }
                 }
-            } 
+            }
         }
         if (update) {
             iwriter.updateDocument(new Term(FIELD_URI, entity.getURI()), doc);
@@ -272,7 +258,7 @@ public class LuceneIndex implements Indexer, Service {
             iwriter.addDocument(doc);
         }
     }
-    
+
     private String asString(RDFNode n) {
         if (n.isLiteral()) {
             return n.asLiteral().getLexicalForm();

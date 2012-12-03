@@ -12,12 +12,10 @@ package com.epimorphics.server.stores;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletContext;
 
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
+import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.util.EpiException;
@@ -31,19 +29,12 @@ import com.hp.hpl.jena.shared.Lock;
  *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
-public abstract class StoreBase implements Store, Service {
-    
+public abstract class StoreBase extends ServiceBase implements Store, Service {
+
     public static final String INDEXER_PARAM = "indexer";
 
     protected volatile List<Indexer> indexers = new ArrayList<Indexer>();
     protected boolean inWrite = false;
-
-    protected Map<String, String> config;
-    
-    @Override
-    public void init(Map<String, String> config, ServletContext context) {
-        this.config = config;
-    }
 
     @Override
     public void postInit() {
@@ -117,7 +108,7 @@ public abstract class StoreBase implements Store, Service {
         } finally {
             unlock();
         }
-        
+
         deleteGraph(graphname);
         addGraph(graphname, input, mimeType);
     }
