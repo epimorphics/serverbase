@@ -1,3 +1,13 @@
+## TODO
+
+Test harness. Current tests are run on the end to end system, need a ServletContext Facade and or 
+create test framework using embedded Tomcat (c.f cmstore tests).
+  Then need local verison of tests for
+    - indexing
+    - indexing when update instead of add
+    - mutate 
+    - streaming index
+    - streaming mutate
 
 ## Schemagen command
 

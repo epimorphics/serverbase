@@ -53,7 +53,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
             }
         }
         String mutatorNames = config.get(MUTATOR_PARAM);
-        if (indexers != null) {
+        if (mutatorNames != null) {
             for (String name : mutatorNames.split(",")) {
                 Service mutator = ServiceConfig.get().getService(name);
                 if (mutator instanceof Mutator) {
@@ -70,19 +70,20 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     protected abstract void doDeleteGraph(String graphname);
 
     @Override
+    abstract public Dataset asDataset();
+
+    @Override
     public void addGraph(String graphname, Model graph) {
-        for (Indexer i : indexers) {
-            i.addGraph(graphname, graph);
-        }
+        mutate(graph);
+        index(graphname, graph, false);
         doAddGraph(graphname, graph);
     }
 
     @Override
     public void updateGraph(String graphname, Model graph) {
         doDeleteGraph(graphname);
-        for (Indexer i : indexers) {
-            i.updateGraph(graphname, graph);
-        }
+        mutate(graph);
+        index(graphname, graph, true);
         doAddGraph(graphname, graph);
     }
 
@@ -97,34 +98,16 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     @Override
     public void addGraph(String graphname, InputStream input, String mimeType) {
         doAddGraph(graphname, input, mimeType);
-        lock();
-        try {
-            Model graph = asDataset().getNamedModel(graphname);
-            for (Indexer i : indexers) {
-                i.addGraph(graphname, graph);
-            }
-        } finally {
-            unlock();
-        }
-
+        mutateNamed(graphname);
+        indexNamed(graphname, false);
     }
 
     @Override
     public void updateGraph(String graphname, InputStream input, String mimeType) {
         doDeleteGraph(graphname);
         doAddGraph(graphname, input, mimeType);
-        lock();
-        try {
-            Model graph = asDataset().getNamedModel(graphname);
-            for (Indexer i : indexers) {
-                i.updateGraph(graphname, graph);
-            }
-        } finally {
-            unlock();
-        }
-
-        deleteGraph(graphname);
-        addGraph(graphname, input, mimeType);
+        mutateNamed(graphname);
+        indexNamed(graphname, true);
     }
 
     @Override
@@ -143,9 +126,41 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         mutators = newl;
     }
 
-    @Override
-    abstract public Dataset asDataset();
-
+    private void mutate(Model graph) {
+        for (Mutator mutator : mutators) {
+            mutator.mutate(graph);
+        }
+    }
+    
+    private void mutateNamed(String graphname) {
+        if (!mutators.isEmpty()) {
+            lockWrite();
+            try {
+                mutate( asDataset().getNamedModel(graphname) );
+            } finally {
+                unlock();
+            }
+        }
+    }
+    
+    private void index(String graphname, Model graph, boolean update) {
+        for (Indexer i : indexers) {
+            if (update) {
+                i.addGraph(graphname, graph);
+            } else {
+                i.updateGraph(graphname, graph);
+            }
+        }
+    }
+    
+    private void indexNamed(String graphname, boolean update) {
+        lock();
+        try {
+            index( graphname, asDataset().getNamedModel(graphname), update );
+        } finally {
+            unlock();
+        }
+    }
 
     /** Lock the dataset for reading */
     public synchronized void lock() {
