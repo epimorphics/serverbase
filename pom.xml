@@ -6,7 +6,7 @@
   <name>Server base utilities</name>
 
   <scm>
-    <developerConnection>scm:git:ssh://git@codebasehq.com:epimorphics/data-fabric/serverbase.git</developerConnection>
+    <developerConnection>scm:git:ssh://git@codebasehq.com/epimorphics/data-fabric/serverbase.git</developerConnection>
     <tag>serverbase-0.0.1</tag>
   </scm>
 
