@@ -2,12 +2,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.epimorphics</groupId>
   <artifactId>serverbase</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.1</version>
   <name>Server base utilities</name>
 
   <scm>
     <developerConnection>scm:git:ssh://git@codebasehq.com:epimorphics/data-fabric/serverbase.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>serverbase-0.0.1</tag>
   </scm>
 
   <properties>
@@ -225,7 +225,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
