@@ -9,9 +9,19 @@
 
 package com.epimorphics.server.stores;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Mutator;
@@ -20,24 +30,46 @@ import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.util.EpiException;
+import com.epimorphics.util.FileUtil;
+import com.epimorphics.util.NameUtils;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.shared.Lock;
+import com.hp.hpl.jena.util.FileUtils;
+import com.ibm.icu.util.Calendar;
 
 /**
- * Base implementation of a generic store.
+ * Base implementation of a generic store. Supports  linking to indexer and mutator services.
+ * Supports optional logging of all requests to a nominated file system.
  *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public abstract class StoreBase extends ServiceBase implements Store, Service {
+    static Logger log = LoggerFactory.getLogger(StoreBase.class);
 
     public static final String INDEXER_PARAM = "indexer";
     public static final String MUTATOR_PARAM = "mutator";
+    public static final String LOG_PARAM = "log";
+
+    public static final String ADD_ACTION = "ADD";
+    public static final String UPDATE_ACTION = "UPDATE";
+    public static final String DELETE_ACTION = "DELETE";
 
     protected volatile List<Indexer> indexers = new ArrayList<Indexer>();
     protected volatile List<Mutator> mutators = new ArrayList<Mutator>();
+    protected String logDirectory;
     protected boolean inWrite = false;
+
+    @Override
+    public void init(Map<String, String> config, ServletContext context) {
+        super.init(config, context);
+        logDirectory = config.get(LOG_PARAM);
+        if (logDirectory != null) {
+            logDirectory = ServiceConfig.get().expandFileLocation(logDirectory);
+            FileUtil.ensureDir(logDirectory);
+        }
+    }
 
     @Override
     public void postInit() {
@@ -74,6 +106,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
 
     @Override
     public void addGraph(String graphname, Model graph) {
+        logAction(ADD_ACTION, graphname, graph);
         mutate(graph);
         index(graphname, graph, false);
         doAddGraph(graphname, graph);
@@ -81,6 +114,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
 
     @Override
     public void updateGraph(String graphname, Model graph) {
+        logAction(UPDATE_ACTION, graphname, graph);
         doDeleteGraph(graphname);
         mutate(graph);
         index(graphname, graph, true);
@@ -89,6 +123,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
 
     @Override
     public void deleteGraph(String graphname) {
+        logAction(DELETE_ACTION, graphname, null);
         for (Indexer i : indexers) {
             i.deleteGraph(graphname);
         }
@@ -98,6 +133,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     @Override
     public void addGraph(String graphname, InputStream input, String mimeType) {
         doAddGraph(graphname, input, mimeType);
+        logNamed(ADD_ACTION, graphname);
         mutateNamed(graphname);
         indexNamed(graphname, false);
     }
@@ -106,6 +142,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     public void updateGraph(String graphname, InputStream input, String mimeType) {
         doDeleteGraph(graphname);
         doAddGraph(graphname, input, mimeType);
+        logNamed(UPDATE_ACTION, graphname);
         mutateNamed(graphname);
         indexNamed(graphname, true);
     }
@@ -124,42 +161,6 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         newl.add(mutator);
         // This should be an atomics switch of lists so no need to sync the methods that use the list
         mutators = newl;
-    }
-
-    private void mutate(Model graph) {
-        for (Mutator mutator : mutators) {
-            mutator.mutate(graph);
-        }
-    }
-    
-    private void mutateNamed(String graphname) {
-        if (!mutators.isEmpty()) {
-            lockWrite();
-            try {
-                mutate( asDataset().getNamedModel(graphname) );
-            } finally {
-                unlock();
-            }
-        }
-    }
-    
-    private void index(String graphname, Model graph, boolean update) {
-        for (Indexer i : indexers) {
-            if (update) {
-                i.addGraph(graphname, graph);
-            } else {
-                i.updateGraph(graphname, graph);
-            }
-        }
-    }
-    
-    private void indexNamed(String graphname, boolean update) {
-        lock();
-        try {
-            index( graphname, asDataset().getNamedModel(graphname), update );
-        } finally {
-            unlock();
-        }
     }
 
     /** Lock the dataset for reading */
@@ -208,6 +209,75 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
             dataset.end();
         } else {
             dataset.asDatasetGraph().getLock().leaveCriticalSection();
+        }
+    }
+
+    // Internal methods
+
+    protected void mutate(Model graph) {
+        for (Mutator mutator : mutators) {
+            mutator.mutate(graph);
+        }
+    }
+
+    protected void mutateNamed(String graphname) {
+        if (!mutators.isEmpty()) {
+            lockWrite();
+            try {
+                mutate( asDataset().getNamedModel(graphname) );
+            } finally {
+                unlock();
+            }
+        }
+    }
+
+    protected void index(String graphname, Model graph, boolean update) {
+        for (Indexer i : indexers) {
+            if (update) {
+                i.addGraph(graphname, graph);
+            } else {
+                i.updateGraph(graphname, graph);
+            }
+        }
+    }
+
+    protected void indexNamed(String graphname, boolean update) {
+        lock();
+        try {
+            index( graphname, asDataset().getNamedModel(graphname), update );
+        } finally {
+            unlock();
+        }
+    }
+
+    protected void logAction(String action, String graph, Model data) {
+        if (logDirectory != null) {
+            String dir = logDirectory + File.separator + NameUtils.encodeSafeName(graph);
+            FileUtil.ensureDir(dir);
+            String filename = String.format("%s-%s.ttl", action, Calendar.getInstance().getTimeInMillis());
+            File logFile = new File(dir, filename);
+            try {
+                if (data != null) {
+                    OutputStream out = new FileOutputStream(logFile);
+                    data.write(out, FileUtils.langTurtle);
+                    out.close();
+                } else {
+                    logFile.createNewFile();
+                }
+            } catch (IOException e) {
+                log.error("Failed to create log file: " + logFile);
+            }
+        }
+    }
+
+    protected void logNamed(String action, String graphname) {
+        if (logDirectory != null) {
+            lockWrite();
+            try {
+                logAction(action, graphname, asDataset().getNamedModel(graphname) );
+            } finally {
+                unlock();
+            }
         }
     }
 
