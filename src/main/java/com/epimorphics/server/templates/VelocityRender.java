@@ -41,6 +41,7 @@ import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.util.FileManager;
 
 /**
@@ -189,6 +190,10 @@ public class VelocityRender extends ServiceBase implements Service {
        PrintWriter out = response.getWriter();
        template.merge(buildContext(request, response, env), out);
        out.close();
+    }
+    
+    public PrefixMapping getPrefixes() {
+        return prefixes;
     }
 
     protected VelocityContext buildContext(HttpServletRequest request, HttpServletResponse response, Map<String, Object> env) {
