@@ -234,9 +234,9 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     protected void index(String graphname, Model graph, boolean update) {
         for (Indexer i : indexers) {
             if (update) {
-                i.addGraph(graphname, graph);
-            } else {
                 i.updateGraph(graphname, graph);
+            } else {
+                i.addGraph(graphname, graph);
             }
         }
     }
