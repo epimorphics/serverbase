@@ -254,7 +254,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         if (logDirectory != null) {
             String dir = logDirectory + File.separator + NameUtils.encodeSafeName(graph);
             FileUtil.ensureDir(dir);
-            String filename = String.format("%s-%s.ttl", action, Calendar.getInstance().getTimeInMillis());
+            String filename = String.format("on-%s-%s.ttl", Calendar.getInstance().getTimeInMillis(), action);
             File logFile = new File(dir, filename);
             try {
                 if (data != null) {
