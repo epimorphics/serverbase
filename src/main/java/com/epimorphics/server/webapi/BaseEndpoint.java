@@ -45,6 +45,7 @@ public class BaseEndpoint {
      * the MIME type so that subclasses can extend it.
      */
     public Model getBodyModel(HttpHeaders hh, InputStream body) {
+        if (hh.getMediaType() == null) return null;
         String mime = hh.getMediaType().toString();
         String lang = null;
         if ( MIME_RDFXML.equals( mime ) ) {
