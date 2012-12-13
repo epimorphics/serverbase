@@ -19,6 +19,8 @@ import org.apache.jena.fuseki.server.DatasetRef;
 import org.apache.jena.fuseki.server.DatasetRegistry;
 import org.openjena.riot.Lang;
 import org.openjena.riot.WebContent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.util.EpiException;
@@ -43,6 +45,8 @@ import com.hp.hpl.jena.tdb.TDBFactory;
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class TDBStore extends StoreBase {
+    static final Logger log = LoggerFactory.getLogger( TDBStore.class );
+
     public static final String LOCATION_PARAM = "location";
     public static final String UNION_PARAM    = "union";
     public static final String QUERY_ENDPOINT_PARAM    = "ep";
@@ -66,13 +70,17 @@ public class TDBStore extends StoreBase {
 
         String qEndpoint = config.get(QUERY_ENDPOINT_PARAM);
         if (qEndpoint != null) {
-            String base = "/" + qEndpoint;
+            String base = context.getContextPath();
+            if ( ! base.endsWith("/")) {
+                base += "/";
+            }
+            base += qEndpoint;
             DatasetRef ds = new DatasetRef();
             ds.name = qEndpoint;
             ds.queryEP.add( base + "/query" );
             ds.dataset = dataset.asDatasetGraph();
-
             DatasetRegistry.get().put(base, ds);
+            log.info("Installing SPARQL query endpoint at " + base + "/query");
         }
     }
 
