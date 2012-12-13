@@ -75,7 +75,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     public void postInit() {
         String indexerNames = config.get(INDEXER_PARAM);
         if (indexers != null) {
-            for (String indexerName : indexerNames.split(",")) {
+            for (String indexerName : indexerNames.split(";")) {
                 Service indexer = ServiceConfig.get().getService(indexerName);
                 if (indexer instanceof Indexer) {
                     indexers.add( (Indexer) indexer );
@@ -86,7 +86,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         }
         String mutatorNames = config.get(MUTATOR_PARAM);
         if (mutatorNames != null) {
-            for (String name : mutatorNames.split(",")) {
+            for (String name : mutatorNames.split(";")) {
                 Service mutator = ServiceConfig.get().getService(name);
                 if (mutator instanceof Mutator) {
                     mutators.add( (Mutator) mutator );
