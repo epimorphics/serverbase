@@ -58,6 +58,9 @@ import com.hp.hpl.jena.util.FileManager;
  *    <li>production - optional property, if set to true then run in production model with full caching</li>
  *  </ul>
  * </p>
+ * <p>
+ * The velocity templates are run in a context with the following variables set.
+ * </p>
  *  <ul>
  *   <li>request - the servlet request object</li>
  *   <li>response - the servlet response object </li>
@@ -69,9 +72,6 @@ import com.hp.hpl.jena.util.FileManager;
  *   <li>all registered services available bound to their names</li>
  *   <li>call-specific bindings which may replace any of the above </li>
  *  </ul>
- * <p>
- * The velocity templates are run in a context with the following variables set.
- * </p>
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class VelocityRender extends ServiceBase implements Service {
@@ -191,7 +191,7 @@ public class VelocityRender extends ServiceBase implements Service {
        template.merge(buildContext(request, response, env), out);
        out.close();
     }
-    
+
     public PrefixMapping getPrefixes() {
         return prefixes;
     }
@@ -209,7 +209,7 @@ public class VelocityRender extends ServiceBase implements Service {
         if (root.equals("/")) {
             root = "";
         }
-        vc.put( "root", root); 
+        vc.put( "root", root);
         vc.put( "lib", Lib.theLib);
         for (String serviceName : ServiceConfig.get().getServiceNames()) {
             vc.put(serviceName, ServiceConfig.get().getService(serviceName));
