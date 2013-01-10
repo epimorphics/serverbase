@@ -1,7 +1,11 @@
 /* CVS $Id: $ */
 package com.epimorphics.vocabs; 
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.ontology.*;
+import com.hp.hpl.jena.ontology.ObjectProperty;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Resource;
  
 /**
  * Vocabulary definitions from src/main/vocabs/li.ttl 

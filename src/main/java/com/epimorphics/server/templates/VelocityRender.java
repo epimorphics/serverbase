@@ -188,7 +188,12 @@ public class VelocityRender extends ServiceBase implements Service {
        response.setStatus(HttpServletResponse.SC_OK);
        response.setCharacterEncoding("UTF-8");
        PrintWriter out = response.getWriter();
-       template.merge(buildContext(request, response, env), out);
+       try {
+           template.merge(buildContext(request, response, env), out);
+       } catch (Exception e) {
+           log.error("Exception executing template: " + templateName, e);
+           throw new EpiException(e);
+       }
        out.close();
     }
 
