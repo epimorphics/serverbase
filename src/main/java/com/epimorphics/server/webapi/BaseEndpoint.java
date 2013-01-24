@@ -34,8 +34,10 @@ import com.hp.hpl.jena.util.FileUtils;
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class BaseEndpoint {
-    
+
     public static final String MIME_TURTLE = "text/turtle";
+
+    public static final String DUMMY_BASE_URI = "http://dummy.com";
 
     protected @Context ServletContext context;
     protected @Context UriInfo uriInfo;
@@ -56,7 +58,7 @@ public class BaseEndpoint {
             return null;
         }
         Model m = ModelFactory.createDefaultModel();
-        m.read(body, null, lang);
+        m.read(body, DUMMY_BASE_URI, lang);
         return m;
     }
 
@@ -105,5 +107,5 @@ public class BaseEndpoint {
             throw new EpiException("Can't find indexer");
         }
     }
-    
+
 }
