@@ -65,18 +65,44 @@ public class ServiceConfig implements ServletContextListener {
             }
         }
 
-        // Post-init pass to allow
+        postInit();
+        defaultStore = null;
+    }
+
+    // Post-init pass to allow cross linking
+    private void postInit() {
         for (String serviceName : services.keySet()) {
             Service service = services.get(serviceName);
             if (service != null) {
                 service.postInit();
             }
         }
-        defaultStore = null;
     }
 
     public static ServiceConfig get() {
+        if (theConfig == null) {
+            // Should only happen during testing
+            theConfig = new ServiceConfig();
+        }
         return theConfig;
+    }
+    
+    /**
+     * Used in test harnesses. Arg list should be an alternating list of names and services.
+     * Each will be added to the configuration and then postInit called for each.
+     */
+    public void initServices(Object... args) {
+        try {
+            int i = 0;
+            while (i < args.length) {
+                String name = (String)args[i++];
+                Service service = (Service)args[i++];
+                services.put(name, service);
+            }
+        } catch (Throwable t) {
+            throw new EpiException("Ill-formed arglist to initServices");
+        }
+        postInit();
     }
 
     synchronized public List<String> getServiceNames() {
