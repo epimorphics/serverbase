@@ -39,5 +39,15 @@ public class ServiceBase implements Service {
     protected String getRequiredFileParam(String param) {
         return ServiceConfig.get().expandFileLocation( getRequiredParam(param)) ;
     }
+    
+    @SuppressWarnings("unchecked")
+    protected <T> T getNamedService(String name, Class<T> type) {
+        Object service = ServiceConfig.get().getService(name);
+        if (type.isInstance(service)) {
+            return (T)service;
+        } else {
+            throw new EpiException("Service " + name + " was not of expected type (" + type + ")"); 
+        }
+    }
 
 }
