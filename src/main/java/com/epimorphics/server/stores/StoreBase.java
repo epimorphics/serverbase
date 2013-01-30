@@ -74,7 +74,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
     @Override
     public void postInit() {
         String indexerNames = config.get(INDEXER_PARAM);
-        if (indexers != null) {
+        if (indexerNames != null) {
             for (String indexerName : indexerNames.split(";")) {
                 Service indexer = ServiceConfig.get().getService(indexerName);
                 if (indexer instanceof Indexer) {
