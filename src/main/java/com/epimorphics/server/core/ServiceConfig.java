@@ -113,6 +113,16 @@ public class ServiceConfig implements ServletContextListener {
         return services.get(name);
     }
 
+    @SuppressWarnings("unchecked")
+    synchronized public <T> T getServiceAs(String name, Class<T> cls ) {
+        Service s = services.get(name);
+        if (s != null && cls.isInstance(s)) {
+            return (T)s;
+        } else {
+            return null;
+        }
+    }
+
     public Store getDefaultStore() {
         if (defaultStore == null) {
             Service defaultStoreService = getService(STORE_SERVICENAME);
@@ -135,7 +145,7 @@ public class ServiceConfig implements ServletContextListener {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T getFirst(Class<T> cls) {
+    public <T> T getFirst(Class<T> cls) {
         for (Service s : services.values()) {
             if (cls.isInstance(s)) {
                 return (T)s;

@@ -39,6 +39,7 @@ import com.epimorphics.rdfutil.DatasetWrapper;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
+import com.epimorphics.server.core.Store;
 import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.shared.PrefixMapping;
@@ -82,6 +83,7 @@ public class VelocityRender extends ServiceBase implements Service {
     public static final String PREFIXES_FILE   = "prefixes.ttl";
     public static final String MACRO_FILE      = "macros.vm";
     public static final String FILTER_NAME     = "VelocityRenderer";
+    public static final String PLUGIN_PARAM     = "plugins";
 
     static Logger log = LoggerFactory.getLogger(VelocityRender.class);
 
@@ -152,6 +154,19 @@ public class VelocityRender extends ServiceBase implements Service {
             throw new EpiException(e);
         }
     }
+    
+    @Override
+    public void postInit() {
+        String plugins = config.get(PLUGIN_PARAM);
+        if (plugins != null) {
+            for (String pluginName : plugins.split("\\|")) {
+                LibPlugin plugin = ServiceConfig.get().getServiceAs(pluginName, LibPlugin.class);
+                if (plugin != null) {
+                    Lib.theLib.addPlugin(pluginName, plugin);
+                }
+            }
+        }
+    }
 
     /**
      * Find velocity template that matches the request path. If one exists render it and return true, otherwise return false.
@@ -219,9 +234,12 @@ public class VelocityRender extends ServiceBase implements Service {
         for (String serviceName : ServiceConfig.get().getServiceNames()) {
             vc.put(serviceName, ServiceConfig.get().getService(serviceName));
         }
-        DatasetWrapper dsw = new DatasetWrapper(ServiceConfig.get().getDefaultStore().asDataset(), true, prefixes);
-        vc.put( "dataset", dsw);
-        vc.put( "model", dsw.getDefaultModelW() );
+        Store defaultStore = ServiceConfig.get().getFirst(Store.class);
+        if (defaultStore != null) {
+            DatasetWrapper dsw = new DatasetWrapper(defaultStore.asDataset(), true, prefixes);
+            vc.put( "dataset", dsw);
+            vc.put( "model", dsw.getDefaultModelW() );
+        }
         if (env != null) {
             for (Entry<String, Object> param : env.entrySet()) {
                 vc.put(param.getKey(), param.getValue());
