@@ -2,7 +2,7 @@
  * File:        LuceneResult.java
  * Created by:  Dave Reynolds
  * Created on:  2 Dec 2012
- * 
+ *
  * (c) Copyright 2012, Epimorphics Limited
  *
  *****************************************************************/
@@ -22,16 +22,16 @@ import com.hp.hpl.jena.rdf.model.ResourceFactory;
 
 /**
  * A lucence search result entry. Provides the match score, the entity URI, the name
- * of the graph it was registered in and the value of any indexed&stored 
+ * of the graph it was registered in and the value of any indexed&stored
  * properties (as strings).
- * 
+ *
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class LuceneResult {
 
     Document doc;
     float score;
-    
+
     public LuceneResult(Document doc, float score) {
         this.doc = doc;
         this.score = score;
@@ -40,15 +40,15 @@ public class LuceneResult {
     public float getScore() {
         return score;
     }
-    
+
     public String getURI() {
         return doc.get(LuceneIndex.FIELD_URI);
     }
-    
+
     public String getGraphname() {
         return doc.get(LuceneIndex.FIELD_GRAPH);
     }
-    
+
 
     public List<String> fieldNames() {
         Set<String> found = new HashSet<String>();
@@ -61,7 +61,7 @@ public class LuceneResult {
         }
         return fieldNames;
     }
-    
+
     /**
      * Returns all the values of a field. These will be either Strings (for literals and labels),
      * Resources (for URI fields) or Longs (for numeric fields)
@@ -83,5 +83,12 @@ public class LuceneResult {
         }
         return results;
     }
-        
+
+    @Override
+    public String toString() {
+        StringBuffer buff = new StringBuffer();
+        buff.append( String.format("Result(%f): %s in <%s>", getScore(), getURI(), getGraphname()) );
+        return buff.toString();
+    }
+
 }

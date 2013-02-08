@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
 
 import javax.servlet.ServletContext;
 
@@ -24,20 +25,23 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
@@ -86,6 +90,8 @@ import com.hp.hpl.jena.vocabulary.RDF;
 // TODO implement the faceted search indexing support
 
 public class LuceneIndex extends ServiceBase implements Indexer, Service {
+    static Logger log = LoggerFactory.getLogger(Indexer.class);
+
     public static final String LOCATION_PARAM = "location";
     public static final String CONFIG_PARAM = "config";
 
@@ -101,13 +107,30 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
 
     protected Directory indexDir;
 
+    protected static IndexWriter writer;
+    protected static SearcherManager searchManager;
+    protected static Timer cleanupTimer;
+
     @Override
     public void init(Map<String, String> config, ServletContext context) {
         super.init(config, context);
         try {
-            String indexLocation = getRequiredFileParam(LOCATION_PARAM);
-            FileUtil.ensureDir(indexLocation);
-            indexDir = FSDirectory.open( new File(indexLocation) );
+            String indexLocation = config.get(LOCATION_PARAM);
+            if (indexLocation == null) {
+                // Typically used for testing only
+                log.warn("Not index location, creating RAM directory");
+                indexDir = new RAMDirectory();
+                getIndexWriter().commit();
+            } else {
+                File indexF = new File(indexLocation);
+                indexDir = FSDirectory.open( indexF );
+                if (!indexF.exists() || (indexF.isDirectory() && indexF.list().length == 0)) {
+                    log.warn("No existing index files, initializing directory " + indexLocation);
+                    FileUtil.ensureDir(indexLocation);
+                    getIndexWriter().commit();
+                }
+            }
+            searchManager = new SearcherManager(indexDir, null);
 
             String configLocation = getRequiredFileParam(CONFIG_PARAM);
             Model configModel = FileManager.get().loadModel(configLocation);
@@ -132,7 +155,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
         try {
             IndexWriter iwriter = getIndexWriter();
             iwriter.deleteDocuments(new Term(FIELD_GRAPH, graphname));
-            iwriter.close();
+            iwriter.commit();
         } catch (Exception e) {
             throw new EpiException(e);
         }
@@ -143,20 +166,24 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
      * searching on lables (e.g. PhraseQuery or TermQuery).
      */
     public LuceneResult[] search(Query query, int offset, int maxResults) {
-        IndexReader reader;
         try {
-            reader = DirectoryReader.open( indexDir );
-            IndexSearcher searcher = new IndexSearcher(reader);
-            TopDocs matches = searcher.search(query, offset + maxResults);
-            ScoreDoc[] hits = matches.scoreDocs;
-            LuceneResult[] results = new LuceneResult[ matches.totalHits - offset ];
-            for (int i = offset; i < hits.length; i++) {
-                ScoreDoc hit = hits[i];
-                results[i] = new LuceneResult( reader.document(hit.doc), hit.score);
+            searchManager.maybeRefresh();           // TODO more intelligent refresh policy
+            IndexSearcher searcher = searchManager.acquire();
+            try {
+                TopDocs matches = searcher.search(query, offset + maxResults);
+                ScoreDoc[] hits = matches.scoreDocs;
+                LuceneResult[] results = new LuceneResult[matches.totalHits
+                        - offset];
+                for (int i = offset; i < hits.length; i++) {
+                    ScoreDoc hit = hits[i];
+                    results[i] = new LuceneResult(searcher.getIndexReader()
+                            .document(hit.doc), hit.score);
+                }
+                return results;
+            } finally {
+                searchManager.release(searcher);
             }
-            reader.close();
-            return results;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new EpiException(e);
         }
     }
@@ -213,7 +240,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
             while (ri.hasNext()) {
                 indexEntity(iwriter, update, graphname, ri.next());
             }
-            iwriter.close();
+            iwriter.commit();
         } catch (Exception e) {
             throw new EpiException(e);
         }
@@ -269,15 +296,19 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
         }
     }
 
-    protected IndexWriter getIndexWriter() {
-        try {
-            Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_40);
-            IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_40, analyzer);
-            IndexWriter iwriter = new IndexWriter(indexDir, config);
-            return iwriter;
-        } catch (Exception e) {
-            throw new EpiException(e);
+    protected synchronized IndexWriter getIndexWriter() {
+        if (writer == null) {
+            try {
+                Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_40);
+                IndexWriterConfig config = new IndexWriterConfig(
+                        Version.LUCENE_40, analyzer);
+                writer = new IndexWriter(indexDir, config);
+                config.setOpenMode( OpenMode.CREATE_OR_APPEND );
+            } catch (Exception e) {
+                throw new EpiException(e);
+            }
         }
-     }
+        return writer;
+    }
 
 }
