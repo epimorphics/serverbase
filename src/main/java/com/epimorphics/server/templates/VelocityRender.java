@@ -11,7 +11,10 @@ package com.epimorphics.server.templates;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,6 +29,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -41,7 +47,6 @@ import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.util.EpiException;
-import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.util.FileManager;
 
@@ -91,7 +96,7 @@ public class VelocityRender extends ServiceBase implements Service {
     protected boolean isProduction;
     protected File templateDir;
     protected String rootURI;
-    protected Model prefixes = null;
+    protected PrefixMapping prefixes = null;
     FilterRegistration registration;
 
     @Override
@@ -210,6 +215,57 @@ public class VelocityRender extends ServiceBase implements Service {
            throw new EpiException(e);
        }
        out.close();
+    }
+    
+    /**
+     * Variant of render suitable for use from jax-rs implementations.
+     * The environment will include the library (lib), the request URI (uri),
+     * the root context for the container (root), and
+     * the set of configured services and the supplied list of bindings.
+     * 
+     * @param templateName  the template to render
+     * @param args   an alternative sequence of names and java objects to inject into the environment
+     * @return
+     */
+    public StreamingOutput render(String templateName, String requestURI, ServletContext context, MultivaluedMap<String, String> parameters, Object...args) {
+        final Template template = ve.getTemplate(templateName);     // Throws exception if not found
+        final VelocityContext vc = new VelocityContext();
+        vc.put("uri", requestURI);
+        vc.put("context", context);
+        String root = context.getContextPath();
+        if (root.equals("/")) {
+            root = "";
+        }
+        vc.put( "root", root);
+        vc.put( "lib", Lib.theLib);
+        for (String serviceName : ServiceConfig.get().getServiceNames()) {
+            vc.put(serviceName, ServiceConfig.get().getService(serviceName));
+        }
+        for (String key : parameters.keySet()) {
+            vc.put(key, parameters.getFirst(key));
+        }
+        for (int i = 0; i < args.length;) {
+            String name = args[i++].toString();
+            if (i >= args.length) {
+                throw new EpiException("Odd number of arguments");
+            }
+            Object value = args[i++];
+            vc.put(name, value);
+        }
+        return new StreamingOutput() {
+            
+            @Override
+            public void write(OutputStream output) throws IOException,
+                    WebApplicationException {
+                OutputStreamWriter writer = new OutputStreamWriter(output, StandardCharsets.UTF_8);
+                template.merge(vc, writer);
+                writer.flush();
+            }
+        };
+    }
+
+    public void setPrefixes(PrefixMapping pm) {
+        prefixes = pm;
     }
 
     public PrefixMapping getPrefixes() {
