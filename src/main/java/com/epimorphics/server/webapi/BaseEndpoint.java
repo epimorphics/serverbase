@@ -14,6 +14,8 @@ import static com.epimorphics.webapi.marshalling.RDFXMLMarshaller.MIME_RDFXML;
 import java.io.InputStream;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -39,8 +41,12 @@ public class BaseEndpoint {
 
     public static final String DUMMY_BASE_URI = "http://dummy.com";
 
+    public static final String SESSION_USER_KEY = "user";
+    public static final String FORWARDED_FOR_HEADER = "X-Forwarded-For";
+
     protected @Context ServletContext context;
     protected @Context UriInfo uriInfo;
+    protected @Context HttpServletRequest request;
 
     /**
      * Load an RDF payload from a POST/PUT request. Returns null if it doesn't understand
@@ -106,6 +112,25 @@ public class BaseEndpoint {
         } else {
             throw new EpiException("Can't find indexer");
         }
+    }
+
+    /**
+     * FInd the name or IP address of the originator of this request
+     */
+    public String getRequestor() {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            Object user = session.getAttribute(SESSION_USER_KEY);
+            if (user != null) {
+                return (String)user;
+            }
+        }
+
+        if (request.getHeader(FORWARDED_FOR_HEADER) != null) {
+            return request.getHeader(FORWARDED_FOR_HEADER);
+        }
+
+        return request.getRemoteAddr();
     }
 
 }
