@@ -95,7 +95,7 @@ public class Lib {
             }
             return result;
         } else {
-            return new String[0];
+            return null;
         }
     }
 
