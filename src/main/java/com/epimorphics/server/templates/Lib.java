@@ -84,7 +84,7 @@ public class Lib {
     }
 
     /**
-     * Match a string to a regex and return a vector of the mathing groups
+     * Match a string to a regex and return a vector of the matching groups
      */
     public String[] regex(Object data, String regex) {
         Matcher m = Pattern.compile(regex).matcher(data.toString());
