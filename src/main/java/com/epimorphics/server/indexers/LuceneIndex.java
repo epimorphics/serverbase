@@ -191,13 +191,13 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
         try {
             IndexSearcher searcher = searchManager.acquire();
             try {
-                TopDocs matches = searcher.search(query, offset + maxResults);
+                int searchLimit = offset + maxResults;
+                TopDocs matches = searcher.search(query, searchLimit);
                 ScoreDoc[] hits = matches.scoreDocs;
-                LuceneResult[] results = new LuceneResult[matches.totalHits
-                        - offset];
+                LuceneResult[] results = new LuceneResult[hits.length - offset];
                 for (int i = offset; i < hits.length; i++) {
                     ScoreDoc hit = hits[i];
-                    results[i] = new LuceneResult(searcher.getIndexReader()
+                    results[i-offset] = new LuceneResult(searcher.getIndexReader()
                             .document(hit.doc), hit.score);
                 }
                 return results;
