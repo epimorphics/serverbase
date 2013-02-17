@@ -17,8 +17,8 @@ import javax.servlet.ServletContext;
 
 import org.apache.jena.fuseki.server.DatasetRef;
 import org.apache.jena.fuseki.server.DatasetRegistry;
-import org.openjena.riot.Lang;
-import org.openjena.riot.WebContent;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.WebContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

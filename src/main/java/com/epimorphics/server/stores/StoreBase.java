@@ -37,7 +37,6 @@ import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.util.FileUtils;
-import com.ibm.icu.util.Calendar;
 
 /**
  * Base implementation of a generic store. Supports  linking to indexer and mutator services.
@@ -254,7 +253,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         if (logDirectory != null) {
             String dir = logDirectory + File.separator + NameUtils.encodeSafeName(graph);
             FileUtil.ensureDir(dir);
-            String filename = String.format("on-%s-%s.ttl", Calendar.getInstance().getTimeInMillis(), action);
+            String filename = String.format("on-%s-%s.ttl", System.currentTimeMillis(), action);
             File logFile = new File(dir, filename);
             try {
                 if (data != null) {
