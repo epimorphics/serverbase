@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.servlet.ServletContext;
 
@@ -81,6 +82,7 @@ import com.hp.hpl.jena.vocabulary.RDF;
  * <ul>
  *  <li>location - directory where the index should be built and stored</li>
  *  <li>config  - RDF file giving the index configuration</li>
+ *  <li>commitWindow - time in sec to wait after a change before committing, default 0</li>
  * </ul>
  * </p>
  *
@@ -89,15 +91,20 @@ import com.hp.hpl.jena.vocabulary.RDF;
 
 // TODO implement the faceted search indexing support
 
+// TODO do we need to periodically close the writer? Makes it hard to use NRT search.
+
 public class LuceneIndex extends ServiceBase implements Indexer, Service {
     static Logger log = LoggerFactory.getLogger(Indexer.class);
 
     public static final String LOCATION_PARAM = "location";
     public static final String CONFIG_PARAM = "config";
+    public static final String COMMIT_PARAM = "commitWindow";
 
     public static final String FIELD_URI = "uri";
     public static final String FIELD_GRAPH = "graph";
     public static final String FIELD_LABEL = "label";
+
+    protected static int DEFAULT_COMMIT_WINDOW = 0;
 
     protected boolean indexAll;
     protected Set<Resource> labelProps = new HashSet<Resource>();
@@ -109,6 +116,10 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
 
     protected static IndexWriter writer;
     protected static SearcherManager searchManager;
+
+    protected int batchDepth = 0;
+    protected int commitWindow = DEFAULT_COMMIT_WINDOW;
+    protected boolean commitScheduled = false;
     protected static Timer cleanupTimer;
 
     @Override
@@ -118,7 +129,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
             String indexLocation = config.get(LOCATION_PARAM);
             if (indexLocation == null) {
                 // Typically used for testing only
-                log.warn("Not index location, creating RAM directory");
+                log.warn("No index location, creating RAM directory");
                 indexDir = new RAMDirectory();
                 getIndexWriter().commit();
             } else {
@@ -130,7 +141,18 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
                     getIndexWriter().commit();
                 }
             }
-            searchManager = new SearcherManager(indexDir, null);
+
+            String commit = config.get(COMMIT_PARAM);
+            if (commit != null) {
+                try {
+                    commitWindow = Integer.parseInt(commit) * 1000;
+                } catch (NumberFormatException e) {
+                    log.error("Bad format for commit window config parameter: " + commit + ", using default");
+                }
+            }
+
+            IndexWriter writer = getIndexWriter();
+            searchManager = new SearcherManager(writer, true, null);
 
             String configLocation = getRequiredFileParam(CONFIG_PARAM);
             Model configModel = FileManager.get().loadModel(configLocation);
@@ -155,7 +177,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
         try {
             IndexWriter iwriter = getIndexWriter();
             iwriter.deleteDocuments(new Term(FIELD_GRAPH, graphname));
-            iwriter.commit();
+            requestCommit();
         } catch (Exception e) {
             throw new EpiException(e);
         }
@@ -167,16 +189,15 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
      */
     public LuceneResult[] search(Query query, int offset, int maxResults) {
         try {
-            searchManager.maybeRefresh();           // TODO more intelligent refresh policy
             IndexSearcher searcher = searchManager.acquire();
             try {
-                TopDocs matches = searcher.search(query, offset + maxResults);
+                int searchLimit = offset + maxResults;
+                TopDocs matches = searcher.search(query, searchLimit);
                 ScoreDoc[] hits = matches.scoreDocs;
-                LuceneResult[] results = new LuceneResult[matches.totalHits
-                        - offset];
+                LuceneResult[] results = new LuceneResult[hits.length - offset];
                 for (int i = offset; i < hits.length; i++) {
                     ScoreDoc hit = hits[i];
-                    results[i] = new LuceneResult(searcher.getIndexReader()
+                    results[i-offset] = new LuceneResult(searcher.getIndexReader()
                             .document(hit.doc), hit.score);
                 }
                 return results;
@@ -240,7 +261,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
             while (ri.hasNext()) {
                 indexEntity(iwriter, update, graphname, ri.next());
             }
-            iwriter.commit();
+            requestCommit();
         } catch (Exception e) {
             throw new EpiException(e);
         }
@@ -309,6 +330,69 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
             }
         }
         return writer;
+    }
+
+    @Override
+    public synchronized void startBatch() {
+        batchDepth++;
+    }
+
+    @Override
+    public synchronized void endBatch() {
+        if (batchDepth <= 0) {
+            throw new EpiException("Attemted to end a non-existent index batch");
+        }
+        if (--batchDepth == 0) {
+            scheduleCommit();
+        }
+    }
+
+    protected void requestCommit() throws IOException {
+        synchronized (this) {
+            if (batchDepth <= 0) {
+                scheduleCommit();
+            }
+        }
+        searchManager.maybeRefresh();
+    }
+
+    protected void scheduleCommit() {
+        if (commitWindow == 0) {
+            doCommit();
+        } else {
+            synchronized (this) {
+                if (!commitScheduled) {
+                    if (cleanupTimer == null) {
+                        cleanupTimer = new Timer(true);
+                    }
+                    cleanupTimer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            commitScheduled = false;
+                            doCommit();
+                        }
+                    }, commitWindow);
+                    commitScheduled = true;
+                }
+            }
+        }
+    }
+
+    protected void doCommit() {
+        IndexWriter writer = getIndexWriter();
+        try {
+            writer.commit();
+            log.debug("Lucene index committed");
+        } catch (Exception e) {
+            // try to save the data
+            try {
+                writer.close();
+            } catch (IOException e1) {
+                // Do nothing, we've already taken our best shot
+                log.error("Failed to even close index writer after commit error", e);
+            }
+            throw new EpiException(e);
+        }
     }
 
 }

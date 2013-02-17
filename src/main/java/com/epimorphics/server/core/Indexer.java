@@ -19,6 +19,17 @@ import com.hp.hpl.jena.rdf.model.Model;
  */
 public interface Indexer {
 
+    /**
+     * Signal an indexer that a batch of changes is starting, this may be
+     * used to optimize commit cycles. No formal transaction semantics implied, is that needed here
+     */
+    public void startBatch();
+
+    /**
+     * Since the end up an update batch.
+     */
+    public void endBatch();
+
     public void addGraph(String graphname, Model graph);
 
     public void updateGraph(String graphname, Model graph);
