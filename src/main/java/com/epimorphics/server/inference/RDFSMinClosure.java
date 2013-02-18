@@ -14,6 +14,7 @@ import java.util.Iterator;
 import com.epimorphics.server.core.Mutator;
 import com.hp.hpl.jena.graph.Factory;
 import com.hp.hpl.jena.graph.Graph;
+import com.hp.hpl.jena.graph.GraphUtil;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.InfModel;
@@ -78,7 +79,7 @@ public class RDFSMinClosure implements Mutator {
                 }
             }
         }
-        data.getBulkUpdateHandler().add(deductions);
+        GraphUtil.addInto(data, deductions);
     }
 
 }
