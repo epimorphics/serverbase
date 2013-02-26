@@ -86,7 +86,7 @@ public class ServiceConfig implements ServletContextListener {
         }
         return theConfig;
     }
-    
+
     /**
      * Used in test harnesses. Arg list should be an alternating list of names and services.
      * Each will be added to the configuration and then postInit called for each.
@@ -103,6 +103,13 @@ public class ServiceConfig implements ServletContextListener {
             throw new EpiException("Ill-formed arglist to initServices");
         }
         postInit();
+    }
+
+    /**
+     * Used in test harnesses to clear out set of services
+     */
+    public void clearServices() {
+        services.clear();
     }
 
     synchronized public List<String> getServiceNames() {
@@ -135,7 +142,7 @@ public class ServiceConfig implements ServletContextListener {
         }
         return defaultStore;
     }
-    
+
     public LuceneIndex getDefaultIndex() {
         return getFirst(LuceneIndex.class);
     }
@@ -153,7 +160,7 @@ public class ServiceConfig implements ServletContextListener {
         }
         return null;
     }
-    
+
     /**
      * Parse a component init string "class-name,p1=val1,p2=val2,..." and instantiate the service
      */
