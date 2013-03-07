@@ -74,7 +74,7 @@ public class MemStore extends StoreBase {
             unlock();
         }
     }
-    
+
     protected Model getSafeNamedModel(String graphname) {
         Model m = dataset.getNamedModel(graphname);
         if (m == null) {
@@ -123,14 +123,17 @@ public class MemStore extends StoreBase {
     @Override
     public Model getUnionModel() {
         int count = 0;
-        for (Iterator<String> i = dataset.listNames(); i.hasNext();) count++;
+        for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
+            i.next();
+            count++;
+        }
         Graph[] graphs = new Graph[ count ];
 
         count = 0;
         for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
-            graphs[count++] = dataset.getNamedModel( i.next() ).getGraph(); 
+            graphs[count++] = dataset.getNamedModel( i.next() ).getGraph();
         }
-        
+
         return ModelFactory.createModelForGraph( new MultiUnion(graphs) );
     }
 
