@@ -161,10 +161,10 @@
         <version>2.3.2</version>
       </plugin>
 
+<!--
       <plugin>
         <groupId>org.apache.jena.tools</groupId>
         <artifactId>schemagen</artifactId>
-<!--         <version>0.2-SNAPSHOT</version> -->
         <version>0.2-20121116.182324-1</version>
         <configuration>
           <includes>
@@ -190,7 +190,7 @@
           </execution>
         </executions>
       </plugin>
-
+-->
     </plugins>
 
     <extensions>
