@@ -194,6 +194,9 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
                 int searchLimit = offset + maxResults;
                 TopDocs matches = searcher.search(query, searchLimit);
                 ScoreDoc[] hits = matches.scoreDocs;
+                if (hits.length < offset) {
+                    return new LuceneResult[0];
+                }
                 LuceneResult[] results = new LuceneResult[hits.length - offset];
                 for (int i = offset; i < hits.length; i++) {
                     ScoreDoc hit = hits[i];
@@ -382,7 +385,6 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
         IndexWriter writer = getIndexWriter();
         try {
             writer.commit();
-            log.debug("Lucene index committed");
         } catch (Exception e) {
             // try to save the data
             try {

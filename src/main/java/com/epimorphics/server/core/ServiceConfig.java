@@ -188,6 +188,9 @@ public class ServiceConfig implements ServletContextListener {
     }
 
     public String expandFileLocation(String location) {
+        if (filebase == null) {
+            return location;
+        }
         return location.replace(WEBAPP_MACRO, filebase );
     }
 
