@@ -93,6 +93,7 @@ public class ServiceConfig implements ServletContextListener {
      */
     public void initServices(Object... args) {
         try {
+            services.clear();
             int i = 0;
             while (i < args.length) {
                 String name = (String)args[i++];
