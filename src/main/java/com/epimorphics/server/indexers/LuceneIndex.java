@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import com.epimorphics.server.core.Indexer;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
+import com.epimorphics.server.core.Shutdown;
 import com.epimorphics.util.EpiException;
 import com.epimorphics.util.FileUtil;
 import com.epimorphics.vocabs.Li;
@@ -93,7 +94,7 @@ import com.hp.hpl.jena.vocabulary.RDF;
 
 // TODO do we need to periodically close the writer? Makes it hard to use NRT search.
 
-public class LuceneIndex extends ServiceBase implements Indexer, Service {
+public class LuceneIndex extends ServiceBase implements Indexer, Service, Shutdown {
     static Logger log = LoggerFactory.getLogger(Indexer.class);
 
     public static final String LOCATION_PARAM = "location";
@@ -394,6 +395,17 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service {
                 log.error("Failed to even close index writer after commit error", e);
             }
             throw new EpiException(e);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        if (writer != null) {
+            try {
+                writer.close();
+            } catch (IOException e) {
+                log.error("Problem shutting down", e);
+            }
         }
     }
 

@@ -204,8 +204,14 @@ public class ServiceConfig implements ServletContextListener {
 //    }
 
     @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        // No action
+    public synchronized void contextDestroyed(ServletContextEvent sce) {
+        for (String sname : services.keySet()) {
+            Service service = services.get(sname);
+            if (service instanceof Shutdown) {
+                ((Shutdown)service).shutdown();
+                log.info("Shut down " + sname);
+            }
+        }
     }
 
 }
