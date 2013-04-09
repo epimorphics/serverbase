@@ -403,6 +403,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service, Shutdo
         if (writer != null) {
             try {
                 writer.close();
+                writer = null;
             } catch (IOException e) {
                 log.error("Problem shutting down", e);
             }
