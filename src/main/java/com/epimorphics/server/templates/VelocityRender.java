@@ -19,14 +19,8 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
@@ -89,6 +83,7 @@ public class VelocityRender extends ServiceBase implements Service {
     public static final String MACRO_FILE      = "macros.vm";
     public static final String FILTER_NAME     = "VelocityRenderer";
     public static final String PLUGIN_PARAM     = "plugins";
+    public static final String MANUAL_PARAM    = "manualConfig";
 
     static Logger log = LoggerFactory.getLogger(VelocityRender.class);
 
@@ -152,9 +147,11 @@ public class VelocityRender extends ServiceBase implements Service {
             }
 
             // Install filter
-            registration = context.addFilter(FILTER_NAME, new VelocityFilter(this));
-            registration.addMappingForUrlPatterns(null, true, rootURI + "/*");
-            log.info("Installed velocity render filter at " + rootURI + "/*");
+            if (!config.containsKey(MANUAL_PARAM) || config.get(MANUAL_PARAM).equalsIgnoreCase("false")) {
+                registration = context.addFilter(FILTER_NAME, new VelocityFilter(this));
+                registration.addMappingForUrlPatterns(null, true, rootURI + "/*");
+                log.info("Installed velocity render filter at " + rootURI + "/*");
+            }
         } catch (Exception e) {
             throw new EpiException(e);
         }
@@ -302,41 +299,6 @@ public class VelocityRender extends ServiceBase implements Service {
             }
         }
         return vc;
-    }
-
-    /**
-     * The filter implementation to install.
-     *
-     * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
-     */
-    public class VelocityFilter implements Filter {
-        VelocityRender renderer;
-
-        public VelocityFilter(VelocityRender renderer) {
-            this.renderer = renderer;
-        }
-
-        @Override
-        public void init(FilterConfig filterConfig) throws ServletException {
-        }
-
-        @Override
-        public void doFilter(ServletRequest request, ServletResponse response,
-                FilterChain chain) throws IOException, ServletException {
-            if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
-                HttpServletRequest hrequest = (HttpServletRequest) request;
-                HttpServletResponse hresponse = (HttpServletResponse) response;
-                if (renderer.render(hrequest, hresponse, null)) {
-                    return;
-                }
-            }
-            chain.doFilter(request, response);
-        }
-
-        @Override
-        public void destroy() {
-        }
-
     }
 
 }
