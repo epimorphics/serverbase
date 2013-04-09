@@ -153,13 +153,13 @@ public class VelocityRender extends ServiceBase implements Service {
 
             // Install filter
             registration = context.addFilter(FILTER_NAME, new VelocityFilter(this));
-            registration.addMappingForUrlPatterns(null, true, rootURI + "/*");
-            log.info("Installed velocity render filter at " + rootURI + "/*");
+//            registration.addMappingForUrlPatterns(null, true, rootURI + "/*");
+//            log.info("Installed velocity render filter at " + rootURI + "/*");
         } catch (Exception e) {
             throw new EpiException(e);
         }
     }
-    
+
     @Override
     public void postInit() {
         String plugins = config.get(PLUGIN_PARAM);
@@ -216,13 +216,13 @@ public class VelocityRender extends ServiceBase implements Service {
        }
        out.close();
     }
-    
+
     /**
      * Variant of render suitable for use from jax-rs implementations.
      * The environment will include the library (lib), the request URI (uri),
      * the root context for the container (root), and
      * the set of configured services and the supplied list of bindings.
-     * 
+     *
      * @param templateName  the template to render
      * @param args   an alternative sequence of names and java objects to inject into the environment
      * @return
@@ -253,7 +253,7 @@ public class VelocityRender extends ServiceBase implements Service {
             vc.put(name, value);
         }
         return new StreamingOutput() {
-            
+
             @Override
             public void write(OutputStream output) throws IOException,
                     WebApplicationException {
