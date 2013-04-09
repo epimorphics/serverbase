@@ -153,8 +153,8 @@ public class VelocityRender extends ServiceBase implements Service {
 
             // Install filter
             registration = context.addFilter(FILTER_NAME, new VelocityFilter(this));
-//            registration.addMappingForUrlPatterns(null, true, rootURI + "/*");
-//            log.info("Installed velocity render filter at " + rootURI + "/*");
+            registration.addMappingForUrlPatterns(null, true, rootURI + "/*");
+            log.info("Installed velocity render filter at " + rootURI + "/*");
         } catch (Exception e) {
             throw new EpiException(e);
         }
