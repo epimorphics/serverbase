@@ -36,6 +36,15 @@ public class ServiceBase implements Service {
         return location;
     }
 
+    protected String getFileParam(String param) {
+        String location = config.get(param);
+        if (location == null){
+            return null;
+        } else {
+            return ServiceConfig.get().expandFileLocation( location);
+        }
+    }
+
     protected String getRequiredFileParam(String param) {
         return ServiceConfig.get().expandFileLocation( getRequiredParam(param)) ;
     }

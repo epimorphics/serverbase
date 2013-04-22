@@ -9,11 +9,15 @@
 
 package com.epimorphics.server.core;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -38,6 +42,7 @@ public class ServiceConfig implements ServletContextListener {
 
     public static final String WEBAPP_MACRO = "${webapp}";
     public static final String CONFIG_PREFIX = "config.";
+    public static final String CONFIG_FILE = "service-config";
     public static final String CLASSNAME_PARAM = "class";
 
     public static final String STORE_SERVICENAME = "store";
@@ -55,16 +60,36 @@ public class ServiceConfig implements ServletContextListener {
         ServletContext context = sce.getServletContext();
         filebase =  withoutTrailingSlash(context.getRealPath("/"));
 
-        Enumeration<String> paramNames = context.getInitParameterNames();
-        while (paramNames.hasMoreElements()) {
-            String param = paramNames.nextElement();
-            if (param.startsWith(CONFIG_PREFIX)) {
-                String serviceName = param.substring(CONFIG_PREFIX.length());
-                Service service = parseInit(serviceName, context.getInitParameter(param), context);
-                services.put(serviceName, service);
+        String configFiles = context.getInitParameter(CONFIG_FILE);
+        if (configFiles != null) {
+            for (String configF : configFiles.split("\\|") ) {
+                File configFile = new File( expandFileLocation(configF) );
+                if (configFile.exists() && configFile.canRead()) {
+                    Properties config = new Properties();
+                    try {
+                        FileReader in = new FileReader(configFile);
+                        config.load(in);
+                        in.close();
+                        parseConfigProperties(config, context);
+                        break;
+                    } catch (IOException e) {
+                        log.error("Failed to load configuration file: " + configFile);
+                    }
+                }
+            }
+        } else {
+            // Load configuraiton as a set of individual context params
+            Enumeration<String> paramNames = context.getInitParameterNames();
+            while (paramNames.hasMoreElements()) {
+                String param = paramNames.nextElement();
+                if (param.startsWith(CONFIG_PREFIX)) {
+                    String serviceName = param.substring(CONFIG_PREFIX.length());
+                    Service service = parseInit(serviceName, context.getInitParameter(param), context);
+                    services.put(serviceName, service);
+                }
             }
         }
-
+        
         postInit();
         defaultStore = null;
     }
@@ -160,6 +185,44 @@ public class ServiceConfig implements ServletContextListener {
             }
         }
         return null;
+    }
+    
+    /**
+     * Load a service configuration from a Properties file
+     */
+    private void parseConfigProperties(Properties config, ServletContext context) {
+        Map<String, Service> serviceObjects = new HashMap<String, Service>();
+        Map<String, Map<String,String>> configs = new HashMap<String, Map<String,String>>();
+        for (String propName : config.stringPropertyNames() ) {
+            String value = config.getProperty(propName).trim();
+            if (propName.contains(".")) {
+                String[] parts = propName.split("\\.");
+                String serviceName = parts[0];
+                String prop = parts[1];
+                Map<String, String> serviceConfig = configs.get(serviceName);
+                if (serviceConfig == null) {
+                    serviceConfig = new HashMap<String, String>();
+                    configs.put(serviceName, serviceConfig);
+                }
+                serviceConfig.put(prop, value);
+            } else {
+                try {
+                    Service service = (Service) Class.forName( value ).newInstance();
+                    serviceObjects.put(propName, service);
+                } catch (Exception e) {
+                    throw new EpiException("Failed to instantiate service " + propName, e);
+                }
+            }
+        }
+        
+        for (String serviceName : serviceObjects.keySet()) {
+            Service service = serviceObjects.get(serviceName);
+            Map<String, String> serviceConfig = configs.get(serviceName);
+            if (serviceConfig != null) {
+                service.init(serviceConfig, context);
+            }
+            services.put(serviceName, service);
+        }
     }
 
     /**
