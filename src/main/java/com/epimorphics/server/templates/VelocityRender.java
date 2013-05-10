@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.epimorphics.rdfutil.DatasetWrapper;
+import com.epimorphics.rdfutil.ModelWrapper;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
@@ -292,6 +293,7 @@ public class VelocityRender extends ServiceBase implements Service {
             DatasetWrapper dsw = new DatasetWrapper(defaultStore.asDataset(), true, prefixes);
             vc.put( "dataset", dsw);
             vc.put( "model", dsw.getDefaultModelW() );
+            vc.put( "unionmodel", new ModelWrapper( defaultStore.getUnionModel() ) );
         }
         if (env != null) {
             for (Entry<String, Object> param : env.entrySet()) {
