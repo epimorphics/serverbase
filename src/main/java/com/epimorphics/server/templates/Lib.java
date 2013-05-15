@@ -9,7 +9,9 @@
 
 package com.epimorphics.server.templates;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -22,8 +24,13 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringEscapeUtils;
 
+import com.epimorphics.rdfutil.RDFNodeWrapper;
 import com.epimorphics.util.NameUtils;
+import com.hp.hpl.jena.datatypes.RDFDatatype;
+import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
+import com.hp.hpl.jena.datatypes.xsd.impl.XSDDateType;
 import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResourceFactory;
@@ -185,6 +192,45 @@ public class Lib {
         return url;
     }
     static final String PAGE_PARAM = "page";
+
+    /**
+     * Test if a node is a date-time literal
+     */
+    public boolean isDatetime(Object node) {
+        return asDateTime(node) != null;
+    }
+
+    /**
+     * Pretty print a datetime literal.
+     * Returns null if it is not a date time
+     */
+    public String printDatetime(Object node) {
+        Literal l = asDateTime(node);
+        if (l != null) {
+            Calendar c = ((XSDDateTime)l.getValue()).asCalendar();
+            return new SimpleDateFormat("d MMM yyyy HH:mm:ss.SSS").format(c.getTime());
+        }
+        return null;
+    }
+
+    private Literal asDateTime(Object node) {
+        RDFNode n;
+        if (node instanceof RDFNodeWrapper) {
+            n = ((RDFNodeWrapper)node).asRDFNode();
+        } else if (node instanceof RDFNode) {
+            n = (RDFNode) node;
+        } else {
+            return null;
+        }
+        if (n.isLiteral()) {
+            Literal l = n.asLiteral();
+            RDFDatatype dt = l.getDatatype();
+            if (XSDDateType.XSDdateTime.equals(dt)) {
+                return l;
+            }
+        }
+        return null;
+    }
 
 }
 
