@@ -292,8 +292,8 @@ public class VelocityRender extends ServiceBase implements Service {
         if (defaultStore != null) {
             DatasetWrapper dsw = new DatasetWrapper(defaultStore.asDataset(), true, prefixes);
             vc.put( "dataset", dsw);
-            vc.put( "model", dsw.getDefaultModelW() );
-            vc.put( "unionmodel", new ModelWrapper( defaultStore.getUnionModel() ) );
+//            vc.put( "model", dsw.getDefaultModelW() );
+//            vc.put( "unionmodel", new ModelWrapper( defaultStore.getUnionModel() ) );
         }
         if (env != null) {
             for (Entry<String, Object> param : env.entrySet()) {
