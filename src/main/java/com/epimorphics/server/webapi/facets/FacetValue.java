@@ -20,11 +20,13 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 public class FacetValue implements Comparable<FacetValue> {
 
     RDFNode value;
+    String lex;
     int count;
 
     public FacetValue(RDFNode value) {
         this.value = value;
         count = 1;
+        lex = RDFUtil.getLabel(value);
     }
 
     public void inc() {
@@ -38,14 +40,14 @@ public class FacetValue implements Comparable<FacetValue> {
     public int getCount() {
         return count;
     }
-    
-    public String lexicalForm() {
-        return RDFUtil.getLabel(value);
+
+    public String getLexicalForm() {
+        return lex;
     }
 
     @Override
     public int compareTo(FacetValue o) {
-        return this.lexicalForm().compareTo( o.lexicalForm() );
+        return lex.compareTo( o.lex );
     }
 
 }

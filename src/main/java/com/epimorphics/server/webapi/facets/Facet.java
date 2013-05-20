@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.epimorphics.rdfutil.RDFUtil;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 
 /**
@@ -28,6 +29,7 @@ public class Facet implements Comparable<Facet> {
     Map<RDFNode, FacetValue> values = new HashMap<RDFNode, FacetValue>();
     RDFNode fixedValue;
     FacetSpec spec;
+    String valueLex;
 
 
     public Facet(FacetSpec spec) {
@@ -39,6 +41,7 @@ public class Facet implements Comparable<Facet> {
      */
     public void setFixedValue(RDFNode value) {
         fixedValue = value;
+        valueLex = RDFUtil.getLabel(value);
     }
 
     /**
@@ -55,6 +58,10 @@ public class Facet implements Comparable<Facet> {
         return fixedValue;
     }
 
+    public String getValueLexicalForm() {
+        return valueLex;
+    }
+
     public void inc(RDFNode item) {
         FacetValue value = values.get(item);
         if (value == null) {
@@ -66,12 +73,12 @@ public class Facet implements Comparable<Facet> {
     }
 
     /**
-     * Return true if this facet is not empty (either has been selected or has a non-empty set of value options 
+     * Return true if this facet is not empty (either has been selected or has a non-empty set of value options
      */
     public boolean notEmpty() {
         return fixedValue != null || values.size() > 0;
     }
-    
+
     /**
      * Return the name of this facet
      */

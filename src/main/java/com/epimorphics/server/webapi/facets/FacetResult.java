@@ -59,18 +59,17 @@ public class FacetResult {
         this.baseQuery = query;
         this.state = new FacetState( specList );
         this.state.setState(state);
-        initFacets();
+        initFacets(model);
         facetCounts(model);
     }
 
-    protected void initFacets() {
+    protected void initFacets(Model model) {
         for (FacetSpec fs : getFacetSpecs()) {
-            Facet facet = facets.get( fs.getName() );
-            facet = new Facet( fs );
+            Facet facet = new Facet( fs );
             if (fs.isSet()) {
-                facet.setFixedValue( fs.getValue() );
+                facet.setFixedValue( fs.getValue().inModel(model) );
             }
-            facets.put(fs.getName(), facet);
+            facets.put(fs.getVarname(), facet);
             facetList.add( facet );
         }
     }
@@ -119,7 +118,7 @@ public class FacetResult {
                 if (vals != null) {
                     for (RDFNode val : vals ) {
                         if (val != null) {
-                            String fname = fs.getName();
+                            String fname = fs.getVarname();
                             Facet facet = facets.get( fname );
                             facet.inc( val);
                         }

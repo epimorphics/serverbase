@@ -9,6 +9,7 @@
 
 package com.epimorphics.server.webapi.facets;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,16 +24,17 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class FacetState {
-    
+
     public static final int SEARCH_LENGTH_LIMIT = 500;
 
     Map<String, FacetSpec> specs = new HashMap<String, FacetSpec>();
-    List<FacetSpec> specList;
+    List<FacetSpec> specList = new ArrayList<FacetSpec>();
 
     public FacetState(List<FacetSpec> specList) {
-        this.specList = specList;
         for (FacetSpec spec : specList) {
-            specs.put(spec.getName(), spec);
+            FacetSpec clone = new FacetSpec(spec.getName(), spec.getVarname(), spec.getPropertyPath());
+            this.specList.add(clone);
+            specs.put(spec.getVarname(), clone);
         }
     }
 
@@ -93,7 +95,7 @@ public class FacetState {
     private String serializeDelta(String omit, String add, RDFNode value) {
         StringBuffer buff = new StringBuffer();
         for (FacetSpec fs : specs.values()) {
-            String fname = fs.getName();
+            String fname = fs.getVarname();
             if ( ! fname.equals(omit) ) {
                 RDFNode setval = fname.equals(add) ? value : fs.getValue();
                 if (setval != null) {
