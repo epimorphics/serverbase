@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringEscapeUtils;
 
+import com.epimorphics.rdfutil.ModelWrapper;
 import com.epimorphics.rdfutil.RDFNodeWrapper;
 import com.epimorphics.util.NameUtils;
 import com.hp.hpl.jena.datatypes.RDFDatatype;
@@ -31,6 +32,7 @@ import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.datatypes.xsd.impl.XSDDateType;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResourceFactory;
@@ -230,6 +232,13 @@ public class Lib {
             }
         }
         return null;
+    }
+
+    /**
+     * Wrap a Jena model as a ModelWrapper for ease of scripting
+     */
+    public ModelWrapper wrap(Model model) {
+        return new ModelWrapper(model);
     }
 
 }
