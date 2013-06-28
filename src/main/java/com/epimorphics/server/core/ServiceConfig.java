@@ -22,6 +22,7 @@
 package com.epimorphics.server.core;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,12 +78,8 @@ public class ServiceConfig implements ServletContextListener {
             for (String configF : configFiles.split("\\|") ) {
                 File configFile = new File( expandFileLocation(configF) );
                 if (configFile.exists() && configFile.canRead()) {
-                    Properties config = new Properties();
                     try {
-                        FileReader in = new FileReader(configFile);
-                        config.load(in);
-                        in.close();
-                        parseConfigProperties(config, context);
+                        parseConfig(configFile, context);
                         break;
                     } catch (IOException e) {
                         log.error("Failed to load configuration file: " + configFile);
@@ -90,7 +87,7 @@ public class ServiceConfig implements ServletContextListener {
                 }
             }
         } else {
-            // Load configuraiton as a set of individual context params
+            // Load configuration as a set of individual context params
             Enumeration<String> paramNames = context.getInitParameterNames();
             while (paramNames.hasMoreElements()) {
                 String param = paramNames.nextElement();
@@ -107,7 +104,7 @@ public class ServiceConfig implements ServletContextListener {
     }
 
     // Post-init pass to allow cross linking
-    private void postInit() {
+    public void postInit() {
         for (String serviceName : services.keySet()) {
             Service service = services.get(serviceName);
             if (service != null) {
@@ -202,7 +199,19 @@ public class ServiceConfig implements ServletContextListener {
     /**
      * Load a service configuration from a Properties file
      */
-    private void parseConfigProperties(Properties config, ServletContext context) {
+    public void parseConfig(File configFile, ServletContext context) throws FileNotFoundException, IOException {
+        FileReader in = new FileReader(configFile);
+        Properties config = new Properties();
+        config.load(in);
+        in.close();
+        parseConfigProperties(config, context);
+    }
+
+    
+    /**
+     * Load a service configuration from a Properties object
+     */
+    public void parseConfigProperties(Properties config, ServletContext context) {
         Map<String, Service> serviceObjects = new HashMap<String, Service>();
         Map<String, Map<String,String>> configs = new HashMap<String, Map<String,String>>();
         for (String propName : config.stringPropertyNames() ) {

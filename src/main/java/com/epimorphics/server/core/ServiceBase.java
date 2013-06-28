@@ -47,6 +47,15 @@ public class ServiceBase implements Service {
         }
         return location;
     }
+    
+    protected int getRequiredIntParam(String param) {
+        String val = getRequiredParam(param);
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            throw new EpiException("Expected " + param + " to be a integer", e);
+        }
+    }
 
     protected String getFileParam(String param) {
         String location = config.get(param);
