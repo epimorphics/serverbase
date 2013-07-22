@@ -23,6 +23,7 @@ package com.epimorphics.server.stores;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -54,7 +55,8 @@ public class MemStore extends StoreBase {
     public static final String QUERY_ENDPOINT_PARAM    = "ep";
 
     protected Dataset dataset;
-
+    protected Model unionModel;
+    
     @Override
     public void init(Map<String, String> config, ServletContext context) {
         super.init(config, context);
@@ -81,7 +83,9 @@ public class MemStore extends StoreBase {
     void doAddGraph(String graphname, Model graph) {
         lockWrite();
         try {
-            getSafeNamedModel(graphname).add(graph);
+            Model m = getSafeNamedModel(graphname);
+            m.add(graph);
+            m.setNsPrefixes(graph);
         } finally {
             unlock();
         }
@@ -134,19 +138,26 @@ public class MemStore extends StoreBase {
 
     @Override
     public Model getUnionModel() {
-        int count = 0;
-        for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
-            i.next();
-            count++;
-        }
-        Graph[] graphs = new Graph[ count ];
-
-        count = 0;
-        for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
-            graphs[count++] = dataset.getNamedModel( i.next() ).getGraph();
-        }
-
-        return ModelFactory.createModelForGraph( new MultiUnion(graphs) );
+        if (unionModel == null) {
+            Map<String, String> prefixes = new HashMap<String, String>();
+            int count = 0;
+            for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
+                i.next();
+                count++;
+            }
+            Graph[] graphs = new Graph[ count ];
+    
+            count = 0;
+            for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
+                Model m = dataset.getNamedModel( i.next() );
+                graphs[count++] = m.getGraph();
+                prefixes.putAll( m.getNsPrefixMap() );
+            }
+    
+            unionModel = ModelFactory.createModelForGraph( new MultiUnion(graphs) );
+            unionModel.setNsPrefixes(prefixes);
+        } 
+        return unionModel;
     }
 
 }
