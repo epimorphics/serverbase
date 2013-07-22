@@ -111,6 +111,12 @@ public class ServiceConfig implements ServletContextListener {
                 service.postInit();
             }
         }
+        for (String serviceName : services.keySet()) {
+            Service service = services.get(serviceName);
+            if (service != null) {
+                service.postPostInit();
+            }
+        }
     }
 
     public static ServiceConfig get() {

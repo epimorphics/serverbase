@@ -40,4 +40,8 @@ public class TestService implements Service {
         System.out.println("Post init called");
     }
 
+    @Override
+    public void postPostInit() {
+    }
+
 }

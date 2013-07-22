@@ -139,7 +139,7 @@ public class LuceneIndex extends ServiceBase implements Indexer, Service, Shutdo
     public void init(Map<String, String> config, ServletContext context) {
         super.init(config, context);
         try {
-            String indexLocation = config.get(LOCATION_PARAM);
+            String indexLocation = getFileParam(LOCATION_PARAM);
             if (indexLocation == null) {
                 // Typically used for testing only
                 log.warn("No index location, creating RAM directory");

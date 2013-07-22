@@ -90,6 +90,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
                 Service indexer = ServiceConfig.get().getService(indexerName);
                 if (indexer instanceof Indexer) {
                     indexers.add( (Indexer) indexer );
+                    log.info("Configured indexer for store");
                 } else {
                     throw new EpiException("Configured indexer doesn't seem to be an Indexer: " + indexerName);
                 }
@@ -102,7 +103,7 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
                 if (mutator instanceof Mutator) {
                     mutators.add( (Mutator) mutator );
                 } else {
-                    throw new EpiException("Configured indexer doesn't seem to be an Indexer: " + name);
+                    throw new EpiException("Configured mutator doesn't seem to be a Mutator: " + name);
                 }
             }
         }

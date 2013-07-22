@@ -80,4 +80,8 @@ public class ServiceBase implements Service {
         }
     }
 
+    @Override
+    public void postPostInit() {
+    }
+
 }

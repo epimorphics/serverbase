@@ -37,4 +37,6 @@ public interface Service {
     void init(Map<String, String> config, ServletContext context);
 
     void postInit();
+    
+    void postPostInit();
 }
