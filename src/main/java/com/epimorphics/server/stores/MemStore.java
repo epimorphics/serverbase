@@ -56,11 +56,16 @@ public class MemStore extends StoreBase {
 
     protected Dataset dataset;
     protected Model unionModel;
+    protected MultiUnion unionGraph;
     
     @Override
     public void init(Map<String, String> config, ServletContext context) {
         super.init(config, context);
         dataset = DatasetFactory.createMem();
+        
+        unionGraph = new MultiUnion();
+        unionModel = ModelFactory.createModelForGraph(unionGraph);
+        dataset.setDefaultModel(unionModel);
 
         String qEndpoint = config.get(QUERY_ENDPOINT_PARAM);
         if (qEndpoint != null) {
@@ -86,6 +91,9 @@ public class MemStore extends StoreBase {
             Model m = getSafeNamedModel(graphname);
             m.add(graph);
             m.setNsPrefixes(graph);
+            
+            unionGraph.addGraph( m.getGraph() );
+            unionModel.setNsPrefixes( graph );
         } finally {
             unlock();
         }
@@ -106,6 +114,8 @@ public class MemStore extends StoreBase {
     void doDeleteGraph(String graphname) {
         lockWrite();
         try {
+            unionGraph.removeGraph( dataset.getNamedModel(graphname).getGraph() );
+
             dataset.removeNamedModel(graphname);
         } finally {
             unlock();
@@ -139,6 +149,7 @@ public class MemStore extends StoreBase {
     @Override
     public Model getUnionModel() {
         if (unionModel == null) {
+            // This block now redundant, to be cleared out
             Map<String, String> prefixes = new HashMap<String, String>();
             int count = 0;
             for (Iterator<String> i = dataset.listNames(); i.hasNext();) {
