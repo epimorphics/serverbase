@@ -84,7 +84,7 @@ public class DatatableAPI extends BaseEndpoint {
     }
     
     private ArrayDatatable initializeTable(String storename, String query, String columns) {
-        log.debug("Creating datatable cache for: " + query);
+        log.debug("Creating datatable cache for: " + query + " | " + columns);
         String[] varnamesRaw = columns.split(",");
         Object[] varnames = new Object[varnamesRaw.length];
         for (int i = 0; i < varnames.length; i++) {
