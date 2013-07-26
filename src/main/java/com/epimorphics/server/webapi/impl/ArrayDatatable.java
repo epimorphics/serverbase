@@ -9,6 +9,7 @@
 
 package com.epimorphics.server.webapi.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -27,7 +28,7 @@ public class ArrayDatatable {
         sortSignature = "";
     }
     
-    // Only call from thread safe wrappers
+    // Only call from thread safe method
     private void sort(DatatableProjection projection) {
         if (!sortSignature.equals(projection.getSortSignature())) {
             Arrays.sort(data, projection);
@@ -35,42 +36,40 @@ public class ArrayDatatable {
         }
     }
     
-    protected Object[][] getProjection(DatatableProjection projection) {
-        sort(projection);
+    // Only call from thread safe method
+    private Object[][] slice(Object[][] fdata, DatatableProjection projection) {
+        int length = Math.min(projection.getLength(), fdata.length - projection.getOffset());
+        Object[][] result = new Object[length][];
+        for (int i = 0; i < length; i++) {
+            result[i] = fdata[i + projection.getOffset()];
+        }
+        return result;
+    }
+
+    private Object[][] filtered(DatatableProjection projection) {
         if (projection.hasFilter()) {
-            Object[][] result = new Object[projection.getLength()][];
-            int count = 0;
-            for (int i = 0; i < data.length && count < projection.getLength(); i++) {
+            ArrayList<Object[]> filtered = new ArrayList<>();
+            for (int i = 0; i < data.length; i++) {
                 if (projection.accept(data[i])) {
-                    result[count] = data[i];
-                    count++;
+                    filtered.add( data[i] );
                 }
             }
-            if (count < result.length) {
-                Object[][] resultTrunc = new Object[count][];
-                for (int i = 0; i < count; i++) {
-                    resultTrunc[i] = result[i];
-                }
-                result = resultTrunc;
-            }
-            return result;
+            return filtered.toArray(new Object[filtered.size()][]);
         } else {
-            int length = Math.min(projection.getLength(), data.length);
-            Object[][] result = new Object[length][];
-            for (int i = 0; i < length; i++) {
-                result[i] = data[i];
-            }
-            return result;
+            return data;
         }
     }
-    
+        
     public synchronized DatatableResponse project(DatatableProjection projection) {
-        Object[][] result = getProjection(projection);
+        sort(projection);
+        Object[][] filtered = filtered(projection);
+        Object[][] result = slice(filtered, projection);
         DatatableResponse response = new DatatableResponse();
-        response.setiTotalDisplayRecords( result.length );
+        response.setiTotalDisplayRecords( filtered.length );
         response.setiTotalRecords( data.length );
         response.setsEcho( projection.getsEcho() );
         response.setAaData( result );
         return response;
     }
+    
 }

@@ -19,12 +19,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.collections.map.LRUMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.server.webapi.impl.ArrayDatatable;
 import com.epimorphics.server.webapi.impl.DatatableProjection;
 import com.epimorphics.server.webapi.impl.DatatableResponse;
+import com.epimorphics.server.webapi.impl.TableResourcePair;
 import com.epimorphics.util.EpiException;
 import com.epimorphics.util.PrefixUtils;
 import com.hp.hpl.jena.query.QueryExecution;
@@ -37,6 +40,8 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 
 @Path("system/tables")
 public class DatatableAPI extends BaseEndpoint {
+    static Logger log = LoggerFactory.getLogger(DatatableAPI.class);
+    
     protected static final String PARAM_query   = "query";
     protected static final String PARAM_columns = "cols";
     protected static final String PARAM_store   = "store";
@@ -51,15 +56,17 @@ public class DatatableAPI extends BaseEndpoint {
         String query = getSafeParam(PARAM_query);
         String columns = getSafeParam(PARAM_columns);
         String storename = getSafeParam(PARAM_store);
+        
+        String key = query + "|" + columns;
 
         ArrayDatatable table = null;
         synchronized (tableCache) {
-            table = (ArrayDatatable) tableCache.get(query);
+            table = (ArrayDatatable) tableCache.get(key);
         }
         if (table == null) {
             table = initializeTable(storename, query, columns);
             synchronized (tableCache) {
-                tableCache.put(query, table);
+                tableCache.put(key, table);
             }
         }
         
@@ -77,9 +84,17 @@ public class DatatableAPI extends BaseEndpoint {
     }
     
     private ArrayDatatable initializeTable(String storename, String query, String columns) {
-        String[] varnames = columns.split(",");
+        log.debug("Creating datatable cache for: " + query);
+        String[] varnamesRaw = columns.split(",");
+        Object[] varnames = new Object[varnamesRaw.length];
         for (int i = 0; i < varnames.length; i++) {
-            varnames[i] = varnames[i].trim();
+            String var = varnamesRaw[i].trim();
+            if (var.contains(">")) {
+                String[] varPair = var.split(">");
+                varnames[i] = new TableResourcePair(varPair[0].trim(), varPair[1].trim());
+            } else {
+                varnames[i] = var;
+            }
         }
         
         Store store = ServiceConfig.get().getServiceAs(storename, Store.class);
@@ -104,19 +119,34 @@ public class DatatableAPI extends BaseEndpoint {
             QuerySolution soln = results.next();
             Object[] row = new Object[varnames.length];
             for (int i = 0; i < varnames.length; i++) {
-                RDFNode val = soln.get(varnames[i]);
-                if (val.isLiteral()) {
-                    row[i] = val.asLiteral().getValue();
-                } else if (val.isURIResource()) {
-                    row[i] = val.asResource().getURI();
-                } else {
-                    row[i] = "[]";
+                try {
+                    Object varname = varnames[i];
+                    if (varname instanceof TableResourcePair) {
+                        TableResourcePair pair = (TableResourcePair)varname;
+                        String name = soln.get(pair.getName()).toString();
+                        String uri = soln.get(pair.getUri()).toString();
+                        row[i] = new TableResourcePair(name, uri);
+                    } else {
+                        row[i] = nodeValue(soln.get((String)varname));
+                    }
+                } catch (Exception e) {
+                    row[i] = "internal error";
                 }
             }
             data[count++] = row;
         }
 
         return new ArrayDatatable(data);
+    }
+    
+    private Object nodeValue(RDFNode val) {
+        if (val.isLiteral()) {
+            return val.asLiteral().getValue();
+        } else if (val.isURIResource()) {
+            return val.asResource().getURI();
+        } else {
+            return "[]";
+        }
     }
 
     private Map<String, String> flatten(MultivaluedMap<String, String> parameters) {

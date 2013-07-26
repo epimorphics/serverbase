@@ -76,13 +76,13 @@ public class DatatableProjection implements Comparator<Object[]> {
             String lcFilter = filter.toLowerCase();
             for (Object value : row) {
                 // Expensive - may want to cache this if used a lot
-                String valueS = value.toString().toLowerCase();
+                String valueS = value.toString();
                 if (filterIsRegex) {
                     if (filterRegex.matcher(valueS).matches()) {
                         return true;
                     }
                 } else {
-                    if (valueS.contains(filter)) {
+                    if (valueS.toLowerCase().contains(lcFilter)) {
                         return true;
                     }
                 }
