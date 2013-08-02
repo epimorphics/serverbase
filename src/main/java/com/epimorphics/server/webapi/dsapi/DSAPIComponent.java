@@ -9,7 +9,10 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
-import com.epimorphics.server.webapi.DSAPIManager;
+import com.epimorphics.rdfutil.RDFUtil;
+import com.epimorphics.server.general.PrefixService;
+import com.epimorphics.server.webapi.marshalling.JSFullWriter;
+import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
@@ -20,7 +23,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
  * 
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
-public class DSAPIComponent {
+public class DSAPIComponent implements JSONWritable {
 
     public enum ComponentRole {
         Dimension,
@@ -34,7 +37,7 @@ public class DSAPIComponent {
         Hierarchy
     }
     
-    protected DSAPIManager manager;
+    protected DSAPI api;
 
     protected Resource spec;
 
@@ -51,10 +54,31 @@ public class DSAPIComponent {
     
     // Range
     
-    public DSAPIComponent(DSAPIManager manager, Resource spec) {
-        this.manager = manager;
+    public DSAPIComponent(DSAPI api, Resource spec) {
+        this(api, spec, null);
+    }
+    
+    public DSAPIComponent(DSAPI api, Resource spec, ComponentRole role) {
+        this.api = api;
         this.spec = spec;
+        this.role = role;
+        
+        this.id = PrefixService.get().getResourceID(spec);
+        this.label = RDFUtil.getLabel(spec);
+        this.description = RDFUtil.getDescription(spec);
         
         // TODO parse spec 
+    }
+
+    @Override
+    public void writeTo(JSFullWriter out) {
+        out.startObject();
+        out.pair("id", id);
+        out.pair("label", label);
+        out.pair("description", description);
+        out.pair("role", role.toString());
+        out.pair("isOptional", isOptional);
+        out.pair("isMultiValued", isMultiValued);
+        out.finishObject();
     }
 }

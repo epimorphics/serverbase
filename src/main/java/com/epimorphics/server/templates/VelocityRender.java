@@ -48,11 +48,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.epimorphics.rdfutil.DatasetWrapper;
-import com.epimorphics.rdfutil.ModelWrapper;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
+import com.epimorphics.server.general.PrefixService;
 import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.util.FileManager;
@@ -179,6 +179,14 @@ public class VelocityRender extends ServiceBase implements Service {
                 if (plugin != null) {
                     Lib.theLib.addPlugin(pluginName, plugin);
                 }
+            }
+        }
+        
+        // Can use global prefix definition if there isn't a local one for this renderer
+        if (prefixes == null) {
+            PrefixService pservice = ServiceConfig.get().getFirst(PrefixService.class);
+            if (pservice != null) {
+                prefixes = pservice.getPrefixes();
             }
         }
     }
