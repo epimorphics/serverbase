@@ -64,6 +64,10 @@ public class DSAPI implements JSONWritable {
             components.add(component);
         }
         // TODO reorder based on any explicit ordering
+        int count = 1;
+        for (DSAPIComponent c : components) {
+            c.setVarname("v" + count++);
+        }
     }
     
     @Override
@@ -92,6 +96,11 @@ public class DSAPI implements JSONWritable {
 
     public String getDescription() {
         return description;
+    }
+    
+    public Projection queryData(State state) {
+        // TODO implement
+        return null;
     }
 
 }

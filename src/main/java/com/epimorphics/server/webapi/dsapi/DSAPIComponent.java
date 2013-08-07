@@ -13,7 +13,15 @@ import com.epimorphics.rdfutil.RDFUtil;
 import com.epimorphics.server.general.PrefixService;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
+import com.epimorphics.vocabs.Cube;
+import com.epimorphics.vocabs.SKOS;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.vocabulary.OWL;
+import com.hp.hpl.jena.vocabulary.RDF;
+import com.hp.hpl.jena.vocabulary.RDFS;
+import com.hp.hpl.jena.vocabulary.XSD;
 
 /**
  * Represents the specification of a single component of a DSAPI.
@@ -46,14 +54,12 @@ public class DSAPIComponent implements JSONWritable {
     protected String description;
     protected ComponentRole role;
     protected RangeCategory rangeCategory;
-    protected String rangeType;
-    boolean isOptional = false;
-    boolean isMultiValued = false;
+    protected String rangeURI;
+    protected Range range;
+    protected boolean isOptional = false;
+    protected boolean isMultiValued = false;
+    protected String varname;
 
-    // Hierarchy - need to represent hierarchy in a way that enables us to query for levels and roots
-    
-    // Range
-    
     public DSAPIComponent(DSAPI api, Resource spec) {
         this(api, spec, null);
     }
@@ -67,7 +73,51 @@ public class DSAPIComponent implements JSONWritable {
         this.label = RDFUtil.getLabel(spec);
         this.description = RDFUtil.getDescription(spec);
         
-        // TODO parse spec 
+        analyzeRange(spec);
+    }
+
+    protected void analyzeRange(Resource spec) {
+        Resource rangeR = RDFUtil.getResourceValue(spec, RDFS.range);
+        if (rangeR != null) {
+            rangeURI = rangeR.getURI();
+        }
+        if (spec.hasProperty(Cube.codeList) || (rangeR != null && (rangeR.equals(SKOS.Concept) || rangeR.hasProperty(RDFS.subClassOf, SKOS.Concept)))) {
+            rangeCategory = RangeCategory.Hierarchy;
+            // TODO work out hierarchy in use and create an API pointer for it
+        } else {
+            if (rangeR == null) {
+                if (spec.hasProperty(RDF.type, OWL.DatatypeProperty)) {
+                    rangeCategory = RangeCategory.Literal;
+                } else {
+                    rangeCategory = RangeCategory.Resource;
+                }
+                // TODO what to say about range values in this case
+            } else {
+                if ( rangeURI.startsWith(XSD.getURI()) ) {
+                    rangeCategory = RangeCategory.Literal;
+                    // TODO check for range declaration?
+                } else {
+                    rangeCategory = RangeCategory.Resource;
+                    Model m = spec.getModel();
+                    ResIterator ri = m.listSubjectsWithProperty(RDF.type, rangeR);
+                    RangeOneof rnge = new RangeOneof();
+                    ResourceCache cache = ResourceCache.get();
+                    while (ri.hasNext()) {
+                        rnge.addValue( cache.valueFromResource(ri.next()) );
+                    }
+                    range = rnge;
+                }                
+            }
+        }
+    }
+
+    
+    public String getVarname() {
+        return varname;
+    }
+
+    public void setVarname(String varname) {
+        this.varname = varname;
     }
 
     @Override
@@ -77,6 +127,14 @@ public class DSAPIComponent implements JSONWritable {
         out.pair("label", label);
         out.pair("description", description);
         out.pair("role", role.toString());
+        out.pair("rangeCategory", rangeCategory.toString());
+        if (rangeURI != null) {
+            out.pair("rangeURI", rangeURI);
+        }
+        if (range != null) {
+            out.key("range");
+            range.writeTo(out);
+        }
         out.pair("isOptional", isOptional);
         out.pair("isMultiValued", isMultiValued);
         out.finishObject();

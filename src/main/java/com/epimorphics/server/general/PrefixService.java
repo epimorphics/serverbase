@@ -21,10 +21,8 @@ import org.slf4j.LoggerFactory;
 import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
-import com.epimorphics.vocabs.SKOS;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.util.FileManager;
 
@@ -80,14 +78,10 @@ public class PrefixService extends ServiceBase implements Service {
     
     /**
      * Find a shortname for a resource to use in APIs.
-     * This will be its skos:notation if it has one, otherwise a curie for its URI, otherwise
-     * its full URI. Caller must ensure appropriate read locks around the store in which resource sites.
+     * This will be a curie for its URI, otherwise
+     * its full URI.
      */
     public String getResourceID(Resource resource) {
-        Statement s = resource.getProperty(SKOS.notation);
-        if (s != null && s.getObject().isLiteral()) {
-            return s.getObject().asLiteral().getLexicalForm();
-        }
         if (resource.isURIResource()) {
             return prefixes.shortForm(resource.getURI());
         } else {

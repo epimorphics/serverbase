@@ -164,6 +164,9 @@ public class JSFullWriter {
         return b.asString() ;
     }
     
+    public void print(String x) {
+        out.print(x);
+    }
     
     private void startCompound()    { stack.push(new Ref<Boolean>(true)) ; }
     private void finishCompound()   { stack.pop(); }
