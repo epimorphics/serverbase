@@ -22,7 +22,7 @@ import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.hp.hpl.jena.vocabulary.RDFS;
 import com.hp.hpl.jena.vocabulary.XSD;
-
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 /**
  * Represents the specification of a single component of a DSAPI.
  * A component is a property or pseudo property that is used in filters 
@@ -127,20 +127,20 @@ public class DSAPIComponent implements JSONWritable {
     @Override
     public void writeTo(JSFullWriter out) {
         out.startObject();
-        out.pair("id", id);
-        out.pair("label", label);
-        out.pair("description", description);
-        out.pair("role", role.toString());
-        out.pair("rangeCategory", rangeCategory.toString());
+        out.pair(ID, id);
+        out.pair(LABEL, label);
+        out.pair(DESCRIPTION, description);
+        out.pair(ROLE, role.toString());
+        out.pair(RANGE_CATEGORY, rangeCategory.toString());
         if (rangeURI != null) {
-            out.pair("rangeURI", rangeURI);
+            out.pair(RANGE_URI, rangeURI);
         }
         if (range != null) {
-            out.key("range");
+            out.key(RANGE);
             range.writeTo(out);
         }
-        out.pair("isOptional", isOptional);
-        out.pair("isMultiValued", isMultiValued);
+        out.pair(IS_OPTIONAL, isOptional);
+        out.pair(IS_MULTIVALUED, isMultiValued);
         out.finishObject();
     }
 }

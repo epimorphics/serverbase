@@ -16,4 +16,10 @@ public class JSONConstants {
     public static final String LABEL = "label";
     public static final String DESCRIPTION = "description";
     public static final String COMPONENTS = "components";
+    public static final String ROLE = "role"; 
+    public static final String RANGE_CATEGORY = "rangeCategory";
+    public static final String RANGE_URI = "rangeURI";
+    public static final String RANGE = "range";
+    public static final String IS_OPTIONAL = "isOptional";
+    public static final String IS_MULTIVALUED = "isMultiValued";
 }

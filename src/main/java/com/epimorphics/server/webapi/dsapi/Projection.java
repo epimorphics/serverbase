@@ -52,8 +52,6 @@ public class Projection {
         }
     }
     
-    // TODO load up data from a SPARQL result set with query mapping
-    
     public void writeSlice(JSFullWriter out, int offset, int length) {
         // TODO write out slice
     }
