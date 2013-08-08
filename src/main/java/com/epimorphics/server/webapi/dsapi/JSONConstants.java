@@ -24,4 +24,6 @@ public class JSONConstants {
     public static final String IS_MULTIVALUED = "isMultiValued";
     public static final String SIZE = "size"; 
     public static final String DATA = "data";
+    public static final String DATA_API = "data-api";
+    public static final String STRUCTURE_API = "structure-api";
 }

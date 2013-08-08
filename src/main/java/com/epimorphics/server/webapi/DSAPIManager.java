@@ -31,7 +31,6 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 
 /**
  * Makes a collection data-cube-like datasets available over a flexible
@@ -45,9 +44,11 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
     static Logger log = LoggerFactory.getLogger(DSAPIManager.class);
     
     protected static final String STORE_PARAM = "store";
+    protected static final String API_BASE = "apiBase";
 
     protected Store store;
     protected Map<String, DSAPI> datasets;
+    protected String apiBase;
     
     @Override
     public void postInit() {
@@ -56,6 +57,7 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
         if (store == null) {
             throw new EpiException("Can't find configured store: " + storeName);
         }
+        apiBase = getRequiredFileParam(API_BASE);
     }
     
     private Map<String, DSAPI> getDatasets() {
@@ -74,6 +76,14 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
         return getDatasets().get(id);
     }
 
+    public String getApiBase() {
+        return apiBase;
+    }
+
+    public Store getStore() {
+        return store;
+    }
+
     private void extractDatasets(Store store) {
         store.lock();
         try {
@@ -88,7 +98,7 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
                 }
                 Resource dsd = dsdN.asResource();
                 String id = PrefixService.get().getResourceID(dataset);
-                datasets.put(id, new DSAPI(dataset, dsd, id, store));
+                datasets.put(id, new DSAPI(this, dataset, dsd));
                 log.info("Registering Dataset API for: " + id);
             }
         } finally {
@@ -101,13 +111,7 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
         getDatasets();
         out.startArray();
         for (String key : datasets.keySet()) {
-            DSAPI dsapi = datasets.get(key);
-            out.startObject();
-            out.pair(ID, key);
-            out.pair(URI, dsapi.getURI());
-            out.pair(LABEL, dsapi.getLabel());
-            out.pair(DESCRIPTION, dsapi.getDescription());
-            out.finishObject();
+            datasets.get(key).writeTo(out);
         }
         out.finishArray();
     }

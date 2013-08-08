@@ -9,6 +9,8 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
+import java.util.Comparator;
+
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
@@ -43,6 +45,24 @@ public class Projection implements JSONWritable {
         this.sortSignature = initialSort;
     }
     
+    public Projection(Projection clone, Object[][] data, String initialSort) {
+        this.api = clone.api;
+        this.offset = clone.offset;
+        this.length = clone.length;
+        
+        this.data = data;
+        this.sortSignature = initialSort;
+    }
+    
+    public Projection(Projection clone, int offset, int limit) {
+        this.api = clone.api;
+        this.data = clone.data;
+        this.sortSignature = clone.sortSignature;
+        
+        this.offset = offset;
+        this.length = limit;
+    }
+    
     public void setSortSignature(String sort) {
         this.sortSignature = sort;
     }
@@ -61,10 +81,7 @@ public class Projection implements JSONWritable {
     }
     
     public Projection slice(int offset, int limit) {
-        Projection slice = new Projection(api, data, sortSignature);
-        slice.setOffset(offset);
-        slice.setLimit(limit);
-        return slice;
+        return new Projection(this, offset, limit);
     }
     
     public int getOffset() {
@@ -97,7 +114,7 @@ public class Projection implements JSONWritable {
         for (int i = 0; i < limit; i++) {
             out.startObject();
             int j = 0;
-            for (DSAPIComponent c : api.components) {
+            for (DSAPIComponent c : api.getComponents()) {
                 out.key(c.getId());
                 Value v = (Value)data[i][j++];
                 v.writeTo(out);
@@ -109,5 +126,19 @@ public class Projection implements JSONWritable {
         }
         out.finishArray();
         out.finishObject();
+    }
+    
+    class CustomSort implements Comparator<Object[]> {
+        
+        public CustomSort(String sortSig) {
+            // TODO
+        }
+
+        @Override
+        public int compare(Object[] arg0, Object[] arg1) {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+        
     }
 }

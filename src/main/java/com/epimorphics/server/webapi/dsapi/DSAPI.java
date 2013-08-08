@@ -9,24 +9,28 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.DATA_API;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.DESCRIPTION;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.ID;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.LABEL;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.STRUCTURE_API;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.URI;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.jena.atlas.json.JsonObject;
 
 import com.epimorphics.rdfutil.RDFUtil;
 import com.epimorphics.server.core.Store;
+import com.epimorphics.server.general.PrefixService;
+import com.epimorphics.server.webapi.DSAPIManager;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
-import com.epimorphics.vocabs.Cube;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSetFactory;
 import com.hp.hpl.jena.query.ResultSetRewindable;
-import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 
@@ -39,51 +43,30 @@ import com.hp.hpl.jena.rdf.model.Resource;
 // TODO handle language settings - different view for each language or on demand lookup? 
 
 public class DSAPI implements JSONWritable {
+    protected DSAPIManager man;
+
     protected String id;
     protected Resource dataset;
     protected String label;
     protected String description;
-    protected Store store;
-
-    protected List<DSAPIComponent> components = new ArrayList<>();
+    protected DSStructure structure;
     
-    public DSAPI(Resource dataset, Resource dsd, String id, Store store) {
-        this.store = store;
+    public DSAPI(DSAPIManager man, Resource dataset, Resource dsd) {
+        this.man = man;
         this.dataset = dataset;
-        this.id = id;
+        this.id = PrefixService.get().getResourceID(dataset);
         this.label = RDFUtil.getLabel(dataset);
         this.description = RDFUtil.getDescription(dataset);
-        extractComponents(dsd);
-    }
-    
-    public List<DSAPIComponent> getComponents() {
-        return components;
-    }
 
-    private void extractComponents(Resource dsd) {
-        for (Resource cspec : RDFUtil.allResourceValues(dsd, Cube.component)) {
-            extractComponentsBy(cspec, Cube.measure, DSAPIComponent.ComponentRole.Measure);
-            extractComponentsBy(cspec, Cube.dimension, DSAPIComponent.ComponentRole.Dimension);
-            extractComponentsBy(cspec, Cube.attribute, DSAPIComponent.ComponentRole.Attribute);
-            extractComponentsBy(cspec, Cube.componentProperty, null);
-        }
-    }
-    
-    private void extractComponentsBy(Resource cspec, Property prop, DSAPIComponent.ComponentRole role) {
-        for (Resource c : RDFUtil.allResourceValues(cspec, prop)) {
-            DSAPIComponent component = new DSAPIComponent(c, role);
-            // TODO extract isRequired flag
-            components.add(component);
-        }
-        // TODO reorder based on any explicit ordering
-        int count = 1;
-        for (DSAPIComponent c : components) {
-            c.setVarname("v" + count++);
-        }
+        structure = new DSStructure(dsd);
     }
     
     public String getURI() {
         return dataset.getURI();
+    }
+    
+    public List<DSAPIComponent> getComponents() {
+        return structure.getComponents();
     }
     
     @Override
@@ -93,13 +76,8 @@ public class DSAPI implements JSONWritable {
         out.pair(URI, getURI());
         out.pair(LABEL, label);
         out.pair(DESCRIPTION, description);
-        out.key(COMPONENTS);
-          out.startArray();
-          for (DSAPIComponent c : getComponents()) {
-              out.arrayElementProcess();
-              c.writeTo(out);
-          }
-          out.finishArray();
+        out.pair(DATA_API, man.getApiBase() + "/" + id + "/data");
+        out.pair(STRUCTURE_API, man.getApiBase() + "/" + id + "/structure");
         out.finishObject();
     }
 
@@ -114,7 +92,13 @@ public class DSAPI implements JSONWritable {
     public String getDescription() {
         return description;
     }
+
     
+    
+    public DSStructure getStructure() {
+        return structure;
+    }
+
     /**
      * Takes a request state as a JSON description, runs the corresponding query
      * and returns the correct slice of the results table as a JSON wriable object.
@@ -122,7 +106,7 @@ public class DSAPI implements JSONWritable {
     public Projection project(JsonObject jstate) {
         State state = new State(jstate);
         // TODO caching
-        Projection projection = queryData(state, store);
+        Projection projection = queryData(state, man.getStore());
         if (state.hasKey(State.OFFSET_PARAM) || state.hasKey(State.LIMIT_PARAM)) {
             projection = projection.slice( state.getInt(State.OFFSET_PARAM, 0), state.getInt(State.LIMIT_PARAM, Integer.MAX_VALUE));
         }
@@ -131,7 +115,7 @@ public class DSAPI implements JSONWritable {
     
     public Projection queryData(State state, Store store) {
         SPARQLFilterQuery query = new SPARQLFilterQuery();
-        for (DSAPIComponent c : components) {
+        for (DSAPIComponent c : getComponents()) {
             Range r = state.getRangeFor(c);
             if (r == null) {
                 query.addQuery(c);
@@ -139,6 +123,8 @@ public class DSAPI implements JSONWritable {
                 query.addFilter(c, r);
             }
         }
+        
+        // TODO sort in the SPARQL query?
 
         store.lock();
         QueryExecution qexec = QueryExecutionFactory.create(query.getQuery(), store.getUnionModel());
@@ -159,13 +145,13 @@ public class DSAPI implements JSONWritable {
     public Object[][] parseResults(ResultSetRewindable rs, State state) {
         ResourceCache rc = ResourceCache.get();
         Object[][] data = new Object[rs.size()][];
-        int rowlen = components.size();
+        int rowlen = getComponents().size();
         int index = 0;
         while(rs.hasNext()) {
             QuerySolution soln = rs.next();
             Object[] row = new Object[rowlen];
             int rindex = 0;
-            for (DSAPIComponent c : components) {
+            for (DSAPIComponent c : getComponents()) {
                 Value v = null;
                 RDFNode n = soln.get( c.getVarname() );
                 if (n != null) {
@@ -183,5 +169,5 @@ public class DSAPI implements JSONWritable {
         }
         return data;
     }
-  
+
 }
