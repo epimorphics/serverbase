@@ -100,5 +100,10 @@ public class ResourceValue extends Value {
     public int compareTo(Value other) {
         return label.compareTo(other.getLexicalForm());
     }
+
+    @Override
+    public String asSPARQL() {
+        return id;
+    }
     
 }

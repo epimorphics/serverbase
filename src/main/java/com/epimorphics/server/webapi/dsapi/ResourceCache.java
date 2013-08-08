@@ -16,7 +16,9 @@ import com.epimorphics.server.core.Service;
 import com.epimorphics.server.core.ServiceBase;
 import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.general.PrefixService;
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.ResourceFactory;
 
@@ -68,7 +70,18 @@ public class ResourceCache extends ServiceBase implements Service {
     }
     
     /**
-     * Lookup a resource value from an ID and ensure it is in the given model (if model is not null).
+     * Lookup a  value from an ID
+     */
+    public synchronized ResourceValue valueFromID(String id) {
+        ResourceValue value = (ResourceValue) cache.get(id);
+        if (value == null) {
+            value = new ResourceValue(prefixService.getPrefixes().expandPrefix(id),  id,  null);
+        }
+        return value;
+    }
+    
+    /**
+     * Lookup a resource from an ID and ensure it is in the given model (if model is not null).
      */
     public synchronized Resource resourceFromID(String id, Model model) {
         ResourceValue value = (ResourceValue) cache.get(id);
@@ -91,6 +104,25 @@ public class ResourceCache extends ServiceBase implements Service {
         ResourceValue value = new ResourceValue(r.getURI(), id, label);
         cache.put(id, value);
         return value;
+    }
+
+    public synchronized Value valueFromNode(RDFNode node) {
+        if (node.isResource()) {
+            return valueFromResource( node.asResource() );
+        } else {
+            Literal l = node.asLiteral();
+            if (l.getDatatype() != null) {
+                Object o = l.getValue();
+                if (o instanceof Number) {
+                    return new NumberValue( (Number)o );
+                } else {
+                    return new TypedValue(l);
+                }
+            } else {
+                // TODO handle language tagged literals
+                return new StringValue( l.getLexicalForm() );
+            }
+        }
     }
     
     protected Resource reverseID(String id, Model model) {

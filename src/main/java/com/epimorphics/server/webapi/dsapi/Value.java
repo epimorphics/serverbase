@@ -22,6 +22,8 @@ public abstract class Value implements JSONWritable, Comparable<Value> {
     
     public abstract String getLexicalForm();
     
+    public abstract String asSPARQL();
+    
     @Override
     public abstract void writeTo(JSFullWriter out);
     

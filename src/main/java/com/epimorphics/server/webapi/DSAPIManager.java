@@ -31,6 +31,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 
 /**
  * Makes a collection data-cube-like datasets available over a flexible
@@ -87,7 +88,7 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
                 }
                 Resource dsd = dsdN.asResource();
                 String id = PrefixService.get().getResourceID(dataset);
-                datasets.put(id, new DSAPI(dsd, id));
+                datasets.put(id, new DSAPI(dataset, dsd, id));
                 log.info("Registering Dataset API for: " + id);
             }
         } finally {
@@ -102,9 +103,10 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
         for (String key : datasets.keySet()) {
             DSAPI dsapi = datasets.get(key);
             out.startObject();
-            out.pair("id", key);
-            out.pair("label", dsapi.getLabel());
-            out.pair("description", dsapi.getDescription());
+            out.pair(ID, key);
+            out.pair(URI, dsapi.getURI());
+            out.pair(LABEL, dsapi.getLabel());
+            out.pair(DESCRIPTION, dsapi.getDescription());
             out.finishObject();
         }
         out.finishArray();

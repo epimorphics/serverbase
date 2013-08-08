@@ -29,8 +29,11 @@ public abstract class Range implements JSONWritable {
         // TODO
         return null;
     }
+    
+    public abstract String filterQuery(DSAPIComponent c);
 
     @Override
     public abstract void writeTo(JSFullWriter out);
+    
 
 }

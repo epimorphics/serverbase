@@ -41,5 +41,10 @@ public class StringValue extends Value{
     public int compareTo(Value other) {
         return lex.compareTo(other.getLexicalForm());
     }
+
+    @Override
+    public String asSPARQL() {
+        return "'" + lex + "'";
+    }
     
 }

@@ -9,8 +9,10 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
+import com.epimorphics.server.general.PrefixService;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.sparql.util.FmtUtils;
 
 /**
  * Represents a value corresponding to a non-numeric typed literal.
@@ -45,5 +47,10 @@ public class TypedValue extends Value {
     public int compareTo(Value other) {
         // TODO handle things like dates with known orderings?
         return getLexicalForm().compareTo(other.getLexicalForm());
+    }
+
+    @Override
+    public String asSPARQL() {
+        return FmtUtils.stringForNode(value.asNode(), PrefixService.get().getPrefixes());
     }
 }

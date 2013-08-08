@@ -9,7 +9,13 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.ID;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.ONEOF;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -18,7 +24,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.jena.atlas.json.JsonObject;
 import org.apache.jena.atlas.json.JsonValue;
 
-import com.hp.hpl.jena.rdf.model.Resource;
+import com.epimorphics.util.EpiException;
 
 /**
  * Represents a Dataset display state from a request. May be used to
@@ -48,7 +54,6 @@ public class State {
         }
     }
     
-    
     public State(JsonObject jstate) {
         ResourceCache rc = ResourceCache.get();
         for (Entry<String, JsonValue> ent : jstate.entrySet()) {
@@ -58,26 +63,81 @@ public class State {
                 state.put(key, value);
             } else {
                 // A component filter
+                Range range = null;
                 if (value.isObject()) {
                     // Range or a single resource value
                     JsonObject o = value.getAsObject();
-                    if (o.hasKey("oneof")) {   // TODO factor out as constants
-                        // TODO extract oneof list, create range and add it to the state map
-                    // TODO other range cases
-                    } else if (o.hasKey("@id")) {
+                    if (o.hasKey(ONEOF)) {
+                        List<Value> args = new ArrayList<>();
+                        for(Iterator<JsonValue> i = o.get(ONEOF).getAsArray().iterator(); i.hasNext();) {
+                            args.add( valueFromIDObject(i.next(), rc) );
+                        }
+                        range = new RangeOneof(args);
+                    } else if (o.hasKey(ID)) {
                         // A single resource value
-                        Resource r = rc.resourceFromID(o.get("@id").getAsString().value(), null);
-                        // TODO actually need a resource value, have a way of generating cheap resource values for filter case
-                        // TODO turn it into a oneof filter and add it to the state map
+                        range = new RangeOneof( valueFromIDObject(o, rc) );
+                    } else {
+                        throw new EpiException("Can't parse component filter: " + value);
                     }
+                    // TODO other range cases
                 }
+                state.put(key, range);
             }
             // TODO parse json structure to internal structure
             state.put(ent.getKey(), ent.getValue());
         }
     }
     
-    // TODO represent range filter structure
+    protected ResourceValue valueFromIDObject(JsonValue v, ResourceCache rc) {
+        if (v instanceof JsonObject) {
+            String id = ((JsonObject)v).get(ID).getAsString().value();
+            return rc.valueFromID(id); 
+        } else {
+            throw new EpiException("Expected JsonObject at: " + v);
+        }
+    }
+    
+    /**
+     * Return the filter range for this description, or null if there is no restriction
+     */
+    public Range getRangeFor(DSAPIComponent c) {
+        Object range = state.get(c.getId());
+        if (range instanceof Range) {
+            return (Range)range;
+        } else if (range == null) {
+            return null;
+        } else {
+            throw new EpiException("Internal error: found non-Range value for component filter");
+        }
+    }
+    
+    /**
+     * Return a state component as a string
+     */
+    public String getString(String key) {
+        Object v = state.get(key);
+        if (v != null) {
+            return v.toString();
+        } else {
+            return null;
+        }
+    }
+    
+    /**
+     * Return a state component as a integer, if possible, otherwise
+     * return the default.
+     */
+    public int getInt(String key, int deflt) {
+        Object v = state.get(key);
+        if (v instanceof Number) {
+            return ((Number)v).intValue();
+        } else if (v instanceof String) {
+            return Integer.parseInt((String)v);
+        } else {
+            return deflt;
+        }
+    }
+    
     
     // TODO create a signature for the filter/sort aspects of the state for cache indexing
     

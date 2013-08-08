@@ -16,24 +16,31 @@ import com.epimorphics.server.webapi.marshalling.JSFullWriter;
  * 
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
+
+// TODO handle aggregation of multi-valued attributes
+
 public class Projection {
-    protected DSAPI api;
     protected Object[][] data;
     protected String sortSignature;
     
-    public Projection(DSAPI api) {
-        this.api = api;
+    public Projection() {
     }
     
-    public Projection(DSAPI api, Object[][] data) {
-        this.api = api;
+    public Projection(Object[][] data) {
         this.data = data;
     }
     
-    public Projection(DSAPI api, Object[][] data, String initialSort) {
-        this.api = api;
+    public Projection(Object[][] data, String initialSort) {
         this.data = data;
         this.sortSignature = initialSort;
+    }
+   
+    public void setSortSignature(String sort) {
+        this.sortSignature = sort;
+    }
+    
+    public String getSortSignature() {
+        return sortSignature;
     }
     
     public Projection sort(String sort) {

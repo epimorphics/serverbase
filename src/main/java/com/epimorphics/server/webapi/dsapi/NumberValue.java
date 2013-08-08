@@ -12,6 +12,7 @@ package com.epimorphics.server.webapi.dsapi;
 import java.math.BigDecimal;
 
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
+import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.rdf.model.Literal;
 
 /**
@@ -32,14 +33,30 @@ public class NumberValue extends Value {
         value = new BigDecimal(d);
     }
     
+    public NumberValue(BigDecimal d) {
+        value = d;
+    }
+    
+    public NumberValue(Number val) {
+        setFrom(val);
+    }
+    
+    private void setFrom(Number val) {
+        if (val instanceof Double || val instanceof Float) {
+            value = new BigDecimal( ((Double)val).doubleValue() );
+        } else if (val instanceof BigDecimal) {
+            value = (BigDecimal)val;
+        } else {
+            value = new BigDecimal( ((Number)val).longValue() );
+        }
+    }
+    
     public NumberValue(Literal l) {
         Object val = l.getValue();
-        if (val instanceof Long) {
-            value = new BigDecimal( ((Long)val).longValue() );
-        } else  if (val instanceof Double) {
-            value = new BigDecimal( ((Double)val).doubleValue() );
-        } else  if (val instanceof BigDecimal) {
-            value = (BigDecimal)val;
+        if (l instanceof Number) {
+            setFrom((Number)val);
+        } else {
+            throw new EpiException("Literal is not a number: " + l);
         }
     }
     
@@ -72,6 +89,11 @@ public class NumberValue extends Value {
         } else {
             return getLexicalForm().compareTo(other.getLexicalForm());
         }
+    }
+
+    @Override
+    public String asSPARQL() {
+        return value.toString();
     }
     
 }

@@ -75,5 +75,11 @@ public class RangeBounds extends Range {
             v.writeTo(out);
         }
     }
+
+    @Override
+    public String filterQuery(DSAPIComponent c) {
+        // TODO Auto-generated method stub
+        return null;
+    }
     
 }

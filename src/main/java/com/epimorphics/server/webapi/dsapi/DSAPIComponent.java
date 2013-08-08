@@ -119,6 +119,10 @@ public class DSAPIComponent implements JSONWritable {
     public void setVarname(String varname) {
         this.varname = varname;
     }
+    
+    public String getId() {
+        return id;
+    }
 
     @Override
     public void writeTo(JSFullWriter out) {
