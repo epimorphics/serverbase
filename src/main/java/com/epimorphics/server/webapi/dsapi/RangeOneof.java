@@ -71,12 +71,12 @@ public class RangeOneof extends Range {
         if (values.size() == 1) {
             return SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " " + values.get(0).asSPARQL() + " .";
         } if (values.isEmpty()) {
-            return SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " " + c.getVarname() + " .";
+            return SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " ?" + c.getVarname() + " .";
         } else {
             StringBuffer q = new StringBuffer();
-            q.append( SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " " + c.getVarname() );
+            q.append( SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " ?" + c.getVarname() );
             q.append(" . ");
-            q.append("FILTER( " + c.getVarname() + " IN (");
+            q.append("FILTER( ?" + c.getVarname() + " IN (");
             for (Iterator<Value> i = values.iterator(); i.hasNext();) {
                 q.append( i.next().asSPARQL() );
                 if (i.hasNext()) q.append(", ");

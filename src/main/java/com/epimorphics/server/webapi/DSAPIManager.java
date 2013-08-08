@@ -88,7 +88,7 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
                 }
                 Resource dsd = dsdN.asResource();
                 String id = PrefixService.get().getResourceID(dataset);
-                datasets.put(id, new DSAPI(dataset, dsd, id));
+                datasets.put(id, new DSAPI(dataset, dsd, id, store));
                 log.info("Registering Dataset API for: " + id);
             }
         } finally {

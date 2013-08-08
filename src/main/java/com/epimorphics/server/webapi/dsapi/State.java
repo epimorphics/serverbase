@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.jena.atlas.json.JsonNumber;
 import org.apache.jena.atlas.json.JsonObject;
 import org.apache.jena.atlas.json.JsonValue;
 
@@ -38,7 +39,7 @@ public class State {
     public static final String TEXT_SEARCH_PARAM = "_text";
     public static final String SORT_PARAM        = "_sort";
     public static final String OFFSET_PARAM      = "_offset";
-    public static final String LENGTH_PARAM      = "_length";
+    public static final String LIMIT_PARAM      = "_limit";
     public static final String LANG_FILTER_PARAM = "_lang";
     public static final String FACET_COUNTS_PARAM = "_withCounts";
     
@@ -83,8 +84,6 @@ public class State {
                 }
                 state.put(key, range);
             }
-            // TODO parse json structure to internal structure
-            state.put(ent.getKey(), ent.getValue());
         }
     }
     
@@ -95,6 +94,10 @@ public class State {
         } else {
             throw new EpiException("Expected JsonObject at: " + v);
         }
+    }
+    
+    public boolean hasKey(String key) {
+        return state.containsKey(key);
     }
     
     /**
@@ -129,7 +132,9 @@ public class State {
      */
     public int getInt(String key, int deflt) {
         Object v = state.get(key);
-        if (v instanceof Number) {
+        if (v instanceof JsonNumber) {
+            return ((JsonNumber)v).value().intValue();
+        } else if (v instanceof Number) {
             return ((Number)v).intValue();
         } else if (v instanceof String) {
             return Integer.parseInt((String)v);

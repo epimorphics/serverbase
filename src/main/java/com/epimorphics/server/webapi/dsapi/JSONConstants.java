@@ -22,4 +22,6 @@ public class JSONConstants {
     public static final String RANGE = "range";
     public static final String IS_OPTIONAL = "isOptional";
     public static final String IS_MULTIVALUED = "isMultiValued";
+    public static final String SIZE = "size"; 
+    public static final String DATA = "data";
 }

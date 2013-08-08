@@ -35,7 +35,7 @@ public class SPARQLFilterQuery {
     }
     
     public void addQuery(DSAPIComponent component) {
-        query.append(String.format("    %s %s %s.\n", OBS_VAR, component.getId(), component.getVarname()));
+        query.append(String.format("    %s %s ?%s.\n", OBS_VAR, component.getId(), component.getVarname()));
     }
     
     public String getQuery() {

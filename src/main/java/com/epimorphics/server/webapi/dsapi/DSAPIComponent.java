@@ -45,8 +45,6 @@ public class DSAPIComponent implements JSONWritable {
         Hierarchy
     }
     
-    protected DSAPI api;
-
     protected Resource spec;
 
     protected String id;
@@ -60,12 +58,11 @@ public class DSAPIComponent implements JSONWritable {
     protected boolean isMultiValued = false;
     protected String varname;
 
-    public DSAPIComponent(DSAPI api, Resource spec) {
-        this(api, spec, null);
+    public DSAPIComponent(Resource spec) {
+        this(spec, null);
     }
     
-    public DSAPIComponent(DSAPI api, Resource spec, ComponentRole role) {
-        this.api = api;
+    public DSAPIComponent(Resource spec, ComponentRole role) {
         this.spec = spec;
         this.role = role;
         
@@ -81,7 +78,7 @@ public class DSAPIComponent implements JSONWritable {
         if (rangeR != null) {
             rangeURI = rangeR.getURI();
         }
-        if (spec.hasProperty(Cube.codeList) || (rangeR != null && (rangeR.equals(SKOS.Concept) || rangeR.hasProperty(RDFS.subClassOf, SKOS.Concept)))) {
+        if (spec.hasProperty(Cube.codeList) || (rangeR != null && rangeR.equals(SKOS.Concept))) {
             rangeCategory = RangeCategory.Hierarchy;
             // TODO work out hierarchy in use and create an API pointer for it
         } else {

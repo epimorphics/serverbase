@@ -14,6 +14,8 @@ import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.jena.atlas.json.JsonObject;
+
 import com.epimorphics.rdfutil.RDFUtil;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
@@ -41,10 +43,12 @@ public class DSAPI implements JSONWritable {
     protected Resource dataset;
     protected String label;
     protected String description;
+    protected Store store;
 
     protected List<DSAPIComponent> components = new ArrayList<>();
     
-    public DSAPI(Resource dataset, Resource dsd, String id) {
+    public DSAPI(Resource dataset, Resource dsd, String id, Store store) {
+        this.store = store;
         this.dataset = dataset;
         this.id = id;
         this.label = RDFUtil.getLabel(dataset);
@@ -67,7 +71,7 @@ public class DSAPI implements JSONWritable {
     
     private void extractComponentsBy(Resource cspec, Property prop, DSAPIComponent.ComponentRole role) {
         for (Resource c : RDFUtil.allResourceValues(cspec, prop)) {
-            DSAPIComponent component = new DSAPIComponent(this, c, role);
+            DSAPIComponent component = new DSAPIComponent(c, role);
             // TODO extract isRequired flag
             components.add(component);
         }
@@ -111,6 +115,20 @@ public class DSAPI implements JSONWritable {
         return description;
     }
     
+    /**
+     * Takes a request state as a JSON description, runs the corresponding query
+     * and returns the correct slice of the results table as a JSON wriable object.
+     */
+    public Projection project(JsonObject jstate) {
+        State state = new State(jstate);
+        // TODO caching
+        Projection projection = queryData(state, store);
+        if (state.hasKey(State.OFFSET_PARAM) || state.hasKey(State.LIMIT_PARAM)) {
+            projection = projection.slice( state.getInt(State.OFFSET_PARAM, 0), state.getInt(State.LIMIT_PARAM, Integer.MAX_VALUE));
+        }
+        return projection;
+    }
+    
     public Projection queryData(State state, Store store) {
         SPARQLFilterQuery query = new SPARQLFilterQuery();
         for (DSAPIComponent c : components) {
@@ -126,7 +144,7 @@ public class DSAPI implements JSONWritable {
         QueryExecution qexec = QueryExecutionFactory.create(query.getQuery(), store.getUnionModel());
         try {
             ResultSetRewindable rs = ResultSetFactory.copyResults( qexec.execSelect() );
-            return new Projection( parseResults(rs, state) );
+            return new Projection(this, parseResults(rs, state) );
         } finally {
             qexec.close();
             store.unlock();
