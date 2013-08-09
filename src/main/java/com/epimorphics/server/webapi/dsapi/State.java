@@ -12,6 +12,7 @@ package com.epimorphics.server.webapi.dsapi;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -73,6 +74,10 @@ public class State {
     
     public boolean hasKey(String key) {
         return state.containsKey(key);
+    }
+    
+    public Set<String> keySet() {
+        return state.keySet();
     }
     
     /**

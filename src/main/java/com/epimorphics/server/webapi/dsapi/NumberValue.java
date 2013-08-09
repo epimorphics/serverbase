@@ -11,6 +11,8 @@ package com.epimorphics.server.webapi.dsapi;
 
 import java.math.BigDecimal;
 
+import org.apache.jena.atlas.json.JsonValue;
+
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.util.EpiException;
 import com.hp.hpl.jena.rdf.model.Literal;
@@ -39,6 +41,14 @@ public class NumberValue extends Value {
     
     public NumberValue(Number val) {
         setFrom(val);
+    }
+
+    public NumberValue(JsonValue val) {
+        if (val.isNumber()) {
+            setFrom( val.getAsNumber().value() );
+        } else {
+            throw new EpiException("Illegal number: " + val);
+        }
     }
     
     private void setFrom(Number val) {

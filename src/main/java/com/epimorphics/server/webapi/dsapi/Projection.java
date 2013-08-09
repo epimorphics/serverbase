@@ -9,15 +9,15 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.DATA;
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.SIZE;
+
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import com.epimorphics.util.EpiException;
-
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 
 /**
  * A table of API results. Can be sorted, sliced, cached.
@@ -164,17 +164,11 @@ public class Projection implements JSONWritable {
                 } else {
                     sortAscending[i] = true;
                 }
-                boolean found = false;
-                List<DSAPIComponent> components = api.getComponents();
-                for (int ci = 0; ci < components.size(); ci++) {
-                    if (sort.equals( components.get(ci).getId())) {
-                        sortColumns[i] = ci;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
+                int ci = api.getComponentIndex(sort);
+                if (ci == -1) {
                     throw new EpiException("Unrecognizable sort key: " + sort);
+                } else {
+                    sortColumns[i] = ci;
                 }
             }
         }

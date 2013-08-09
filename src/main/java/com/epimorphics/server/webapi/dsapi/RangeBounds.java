@@ -22,6 +22,9 @@ public class RangeBounds extends Range {
     protected NumberValue gt;
     protected NumberValue ge;
     
+    public RangeBounds() {
+    }
+    
     public RangeBounds(NumberValue lower, NumberValue upper) {
         ge = lower;
         le = upper;
@@ -78,8 +81,34 @@ public class RangeBounds extends Range {
 
     @Override
     public String filterQuery(DSAPIComponent c) {
-        // TODO Auto-generated method stub
-        return null;
+        StringBuffer q = new StringBuffer();
+        String vn = c.getVarname();
+        q.append( SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " ?" + vn );
+        q.append(" . ");
+        q.append("FILTER(");
+        boolean started = false;
+        started = addFilter(q, vn, ">", gt, started);
+        started = addFilter(q, vn, ">=", ge, started);
+        started = addFilter(q, vn, "<", lt, started);
+        started = addFilter(q, vn, "<=", le, started);
+        q.append(")");
+        return q.toString();
     }
-    
+
+    private boolean addFilter(StringBuffer q, String varname, String op, NumberValue bound, boolean started) {
+        if (bound != null) {
+            if (started) {
+                q.append(" && ");
+            }
+            q.append("?");
+            q.append(varname);
+            q.append(" ");
+            q.append(op);
+            q.append(" ");
+            q.append( bound.asSPARQL() );
+            return true;
+        } else {
+            return started;
+        }
+    }
 }

@@ -9,9 +9,7 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.ID;
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.ONEOF;
-
+import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,6 +43,13 @@ public abstract class Range implements JSONWritable {
         } else if (spec.hasKey(ID)) {
             // A single resource value
             return new RangeOneof( valueFromIDObject(spec, rc) );
+        } else if (spec.hasKey(LT) ||spec.hasKey(LE) ||spec.hasKey(GT) ||spec.hasKey(GE)) {
+            RangeBounds range = new RangeBounds();
+            if (spec.hasKey(LT)) range.setLt( new NumberValue( spec.get(LT)) );
+            if (spec.hasKey(LE)) range.setLe( new NumberValue( spec.get(LE)) );
+            if (spec.hasKey(GT)) range.setGt( new NumberValue( spec.get(GT)) );
+            if (spec.hasKey(GE)) range.setGe( new NumberValue( spec.get(GE)) );
+            return range;
         }
         // TODO other range cases
         return null;

@@ -96,6 +96,19 @@ public class DSStructure implements JSONWritable {
         return description;
     }
     
+    /**
+     * Return the index of a component (identified by ID) within the structure signature,
+     * or -1 if the component is not recognized
+     */
+    public int getComponentIndex(String id) {
+        for (int i = 0; i < components.size(); i++) {
+            if ( id.equals(components.get(i).getId()) ) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
     @Override
     public void writeTo(JSFullWriter out) {
         out.startObject();

@@ -18,12 +18,17 @@ import static com.epimorphics.server.webapi.dsapi.JSONConstants.URI;
 
 import java.util.List;
 
+import javax.ws.rs.core.Response.Status;
+
 import org.apache.jena.atlas.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.epimorphics.rdfutil.RDFUtil;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.server.general.PrefixService;
 import com.epimorphics.server.webapi.DSAPIManager;
+import com.epimorphics.server.webapi.WebApiException;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import com.hp.hpl.jena.query.QueryExecution;
@@ -43,6 +48,8 @@ import com.hp.hpl.jena.rdf.model.Resource;
 // TODO handle language settings - different view for each language or on demand lookup? 
 
 public class DSAPI implements JSONWritable {
+    static Logger log = LoggerFactory.getLogger(DSAPI.class);
+    
     protected DSAPIManager man;
 
     protected String id;
@@ -69,6 +76,14 @@ public class DSAPI implements JSONWritable {
         return structure.getComponents();
     }
     
+    /**
+     * Return the index of a component (identified by ID) within the structure signature,
+     * or -1 if the component is not recognized
+     */
+    public int getComponentIndex(String id) {
+        return structure.getComponentIndex(id);
+    }
+     
     @Override
     public void writeTo(JSFullWriter out) {
         out.startObject();
@@ -104,8 +119,20 @@ public class DSAPI implements JSONWritable {
      * and returns the correct slice of the results table as a JSON wriable object.
      */
     public Projection project(JsonObject jstate) {
-        State state = new State(jstate);
+        State state = null;
+        try {
+            state = new State(jstate);
+        } catch (Exception e) {
+            throw new WebApiException(Status.BAD_REQUEST, e.getMessage());
+        }
+        for (String key : state.keySet()) {
+            if ( (!key.startsWith("_")) && getComponentIndex(key) == -1) {
+                throw new WebApiException(Status.BAD_REQUEST, "Filter requested on unrecognized component: " + key);
+            }
+        }
+        
         // TODO caching
+        
         Projection projection = queryData(state, man.getStore());
         if (state.hasKey(State.SORT_PARAM)) {
             projection = projection.sort(state.getString(State.SORT_PARAM));
@@ -130,7 +157,9 @@ public class DSAPI implements JSONWritable {
         // TODO sort in the SPARQL query?
 
         store.lock();
-        QueryExecution qexec = QueryExecutionFactory.create(query.getQuery(), store.getUnionModel());
+        String qstr = query.getQuery();
+        log.debug("Project query is: " + qstr);
+        QueryExecution qexec = QueryExecutionFactory.create(qstr, store.getUnionModel());
         try {
             ResultSetRewindable rs = ResultSetFactory.copyResults( qexec.execSelect() );
             return new Projection(this, parseResults(rs, state) );
