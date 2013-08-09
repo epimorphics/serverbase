@@ -9,13 +9,7 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.ID;
-import static com.epimorphics.server.webapi.dsapi.JSONConstants.ONEOF;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -23,6 +17,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.jena.atlas.json.JsonNumber;
 import org.apache.jena.atlas.json.JsonObject;
+import org.apache.jena.atlas.json.JsonString;
 import org.apache.jena.atlas.json.JsonValue;
 
 import com.epimorphics.util.EpiException;
@@ -56,7 +51,6 @@ public class State {
     }
     
     public State(JsonObject jstate) {
-        ResourceCache rc = ResourceCache.get();
         for (Entry<String, JsonValue> ent : jstate.entrySet()) {
             String key = ent.getKey();
             JsonValue value = ent.getValue();
@@ -67,32 +61,13 @@ public class State {
                 Range range = null;
                 if (value.isObject()) {
                     // Range or a single resource value
-                    JsonObject o = value.getAsObject();
-                    if (o.hasKey(ONEOF)) {
-                        List<Value> args = new ArrayList<>();
-                        for(Iterator<JsonValue> i = o.get(ONEOF).getAsArray().iterator(); i.hasNext();) {
-                            args.add( valueFromIDObject(i.next(), rc) );
-                        }
-                        range = new RangeOneof(args);
-                    } else if (o.hasKey(ID)) {
-                        // A single resource value
-                        range = new RangeOneof( valueFromIDObject(o, rc) );
-                    } else {
+                    range = Range.create( value.getAsObject() );
+                    if (range == null) {
                         throw new EpiException("Can't parse component filter: " + value);
                     }
-                    // TODO other range cases
                 }
                 state.put(key, range);
             }
-        }
-    }
-    
-    protected ResourceValue valueFromIDObject(JsonValue v, ResourceCache rc) {
-        if (v instanceof JsonObject) {
-            String id = ((JsonObject)v).get(ID).getAsString().value();
-            return rc.valueFromID(id); 
-        } else {
-            throw new EpiException("Expected JsonObject at: " + v);
         }
     }
     
@@ -120,6 +95,9 @@ public class State {
     public String getString(String key) {
         Object v = state.get(key);
         if (v != null) {
+            if (v instanceof JsonString) {
+                return ((JsonString)v).value();
+            }
             return v.toString();
         } else {
             return null;

@@ -9,10 +9,14 @@
 
 package com.epimorphics.server.webapi.dsapi;
 
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
+import com.epimorphics.util.EpiException;
+
 import static com.epimorphics.server.webapi.dsapi.JSONConstants.*;
 
 /**
@@ -75,8 +79,16 @@ public class Projection implements JSONWritable {
         if (sort.equals(sortSignature)) {
             return this;
         } else {
-            // TODO create new sorted projection
-            return null;
+            CustomSort comparator = new CustomSort(sort);
+            if (comparator.isNull()) {
+                return this;
+            }
+            Object[][] clone = new Object[data.length][];
+            for (int i = 0; i < data.length; i++) {
+                clone[i] = data[i];
+            }
+            Arrays.sort(clone, comparator);
+            return new Projection(this, clone, sortSignature);
         }
     }
     
@@ -129,14 +141,58 @@ public class Projection implements JSONWritable {
     }
     
     class CustomSort implements Comparator<Object[]> {
+        protected int nSort;
+        protected int[] sortColumns;
+        protected boolean[] sortAscending;
         
         public CustomSort(String sortSig) {
-            // TODO
+            String[] sorts = sortSig.split(",");
+            nSort = sorts.length;
+            if (nSort == 0) {
+                return;
+            }
+            sortColumns = new int[nSort];
+            sortAscending = new boolean[nSort];
+            for (int i = 0; i < nSort; i++) {
+                String sort = sorts[i].trim();
+                if (sort.endsWith("+")) {
+                    sort = sort.substring(0, sort.length()-1);
+                    sortAscending[i] = true;
+                } else if (sort.endsWith("-")) {
+                    sort = sort.substring(0, sort.length()-1);
+                    sortAscending[i] = false;
+                } else {
+                    sortAscending[i] = true;
+                }
+                boolean found = false;
+                List<DSAPIComponent> components = api.getComponents();
+                for (int ci = 0; ci < components.size(); ci++) {
+                    if (sort.equals( components.get(ci).getId())) {
+                        sortColumns[i] = ci;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new EpiException("Unrecognizable sort key: " + sort);
+                }
+            }
+        }
+        
+        public boolean isNull() {
+            return nSort == 0;
         }
 
         @Override
-        public int compare(Object[] arg0, Object[] arg1) {
-            // TODO Auto-generated method stub
+        public int compare(Object[] row1, Object[] row2) {
+            for (int i = 0; i < nSort; i++) {
+                int col = sortColumns[i];
+                @SuppressWarnings({ "unchecked", "rawtypes" })
+                int comparison = ((Comparable)row1[col]).compareTo( (Comparable)row2[col] );
+                if (comparison != 0) {
+                    return sortAscending[i] ? comparison : -comparison;
+                }
+            }
             return 0;
         }
         

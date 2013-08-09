@@ -107,6 +107,9 @@ public class DSAPI implements JSONWritable {
         State state = new State(jstate);
         // TODO caching
         Projection projection = queryData(state, man.getStore());
+        if (state.hasKey(State.SORT_PARAM)) {
+            projection = projection.sort(state.getString(State.SORT_PARAM));
+        }
         if (state.hasKey(State.OFFSET_PARAM) || state.hasKey(State.LIMIT_PARAM)) {
             projection = projection.slice( state.getInt(State.OFFSET_PARAM, 0), state.getInt(State.LIMIT_PARAM, Integer.MAX_VALUE));
         }
