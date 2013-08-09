@@ -14,6 +14,7 @@ import com.epimorphics.server.general.PrefixService;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import com.epimorphics.vocabs.Cube;
+import com.epimorphics.vocabs.Dsapi;
 import com.epimorphics.vocabs.SKOS;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -104,6 +105,15 @@ public class DSAPIComponent implements JSONWritable {
                     }
                     range = rnge;
                 }                
+            }
+            if (spec.hasProperty(Dsapi.lowerBound) || spec.hasProperty(Dsapi.upperBound)) {
+                rangeCategory = RangeCategory.Literal;
+                RangeBounds rb = new RangeBounds();
+                Number n = RDFUtil.getNumericValue(spec, Dsapi.lowerBound);
+                if (n != null) rb.setGe( new NumberValue(n) );
+                n = RDFUtil.getNumericValue(spec, Dsapi.upperBound);
+                if (n != null) rb.setLe( new NumberValue(n) );
+                range = rb;
             }
         }
     }

@@ -15,4 +15,4 @@ Copy/paste of schemagen maven plugin didn't seem to work so:
 
      schemagen --ontology -i src/main/vocabs/li.ttl --package com.epimorphics.vocabs -o src/main/java
 
-     
+     schemagen --owl --nostrict -i src/main/vocabs/dsapi.ttl --package com.epimorphics.vocabs -o src/main/java 
