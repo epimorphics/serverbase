@@ -65,7 +65,7 @@ public class DSAPI implements JSONWritable {
         this.label = RDFUtil.getLabel(dataset);
         this.description = RDFUtil.getDescription(dataset);
 
-        structure = new DSStructure(dsd);
+        structure = new DSStructure(dsd, this);
     }
     
     public String getURI() {
@@ -74,8 +74,12 @@ public class DSAPI implements JSONWritable {
     
     public List<DSAPIComponent> getComponents() {
         return structure.getComponents();
-    }
+    }       
     
+    public DSAPIManager getMan() {
+        return man;
+    }
+
     /**
      * Return the index of a component (identified by ID) within the structure signature,
      * or -1 if the component is not recognized
@@ -91,8 +95,8 @@ public class DSAPI implements JSONWritable {
         out.pair(URI, getURI());
         out.pair(LABEL, label);
         out.pair(DESCRIPTION, description);
-        out.pair(DATA_API, man.getApiBase() + "/" + id + "/data");
-        out.pair(STRUCTURE_API, man.getApiBase() + "/" + id + "/structure");
+        out.pair(DATA_API, man.getApiBase() + "/dataset/" + id + "/data");
+        out.pair(STRUCTURE_API, man.getApiBase() + "/dataset/" + id + "/structure");
         out.finishObject();
     }
 

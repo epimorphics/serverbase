@@ -83,6 +83,10 @@ public class DSAPIManager extends ServiceBase implements Service, JSONWritable {
     public Store getStore() {
         return store;
     }
+    
+    public HierarchyAPI getCodelistAPI(String id) {
+        return new HierarchyAPI(id, this);
+    }
 
     private void extractDatasets(Store store) {
         store.lock();

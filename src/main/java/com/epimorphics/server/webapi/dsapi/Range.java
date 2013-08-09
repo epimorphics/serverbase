@@ -64,7 +64,10 @@ public abstract class Range implements JSONWritable {
         }
     }
      
-    public abstract String filterQuery(DSAPIComponent c);
+    public String filterQuery(DSAPIComponent c) {
+        // Default is no filter
+        return SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " ?" + c.getVarname() + " .";
+    }
 
     @Override
     public abstract void writeTo(JSFullWriter out);

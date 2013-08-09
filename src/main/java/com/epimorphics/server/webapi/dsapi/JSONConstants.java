@@ -26,6 +26,7 @@ public class JSONConstants {
     public static final String DATA = "data";
     public static final String DATA_API = "data-api";
     public static final String STRUCTURE_API = "structure-api";
+    public static final String API = "api";
     public static final String LT = "lt";
     public static final String LE = "le";
     public static final String GT = "gt";

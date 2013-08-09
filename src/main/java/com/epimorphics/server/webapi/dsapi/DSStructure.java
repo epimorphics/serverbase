@@ -46,30 +46,30 @@ public class DSStructure implements JSONWritable {
      * Parse a data structure definition to find the structure of a dataset.
      * The corresponding model must be suitably locked for reading.
      */
-    public DSStructure(Resource dsd) {
+    public DSStructure(Resource dsd, DSAPI api) {
         this.dsd = dsd;
         this.id = PrefixService.get().getResourceID(dsd);
         this.label = RDFUtil.getLabel(dsd);
         this.description = RDFUtil.getDescription(dsd);
-        extractComponents(dsd);
+        extractComponents(dsd, api);
     }
     
     public List<DSAPIComponent> getComponents() {
         return components;
     }
 
-    private void extractComponents(Resource dsd) {
+    private void extractComponents(Resource dsd, DSAPI api) {
         for (Resource cspec : RDFUtil.allResourceValues(dsd, Cube.component)) {
-            extractComponentsBy(cspec, Cube.measure, DSAPIComponent.ComponentRole.Measure);
-            extractComponentsBy(cspec, Cube.dimension, DSAPIComponent.ComponentRole.Dimension);
-            extractComponentsBy(cspec, Cube.attribute, DSAPIComponent.ComponentRole.Attribute);
-            extractComponentsBy(cspec, Cube.componentProperty, null);
+            extractComponentsBy(cspec, Cube.measure, DSAPIComponent.ComponentRole.Measure, api);
+            extractComponentsBy(cspec, Cube.dimension, DSAPIComponent.ComponentRole.Dimension, api);
+            extractComponentsBy(cspec, Cube.attribute, DSAPIComponent.ComponentRole.Attribute, api);
+            extractComponentsBy(cspec, Cube.componentProperty, null, api);
         }
     }
     
-    private void extractComponentsBy(Resource cspec, Property prop, DSAPIComponent.ComponentRole role) {
+    private void extractComponentsBy(Resource cspec, Property prop, DSAPIComponent.ComponentRole role, DSAPI api) {
         for (Resource c : RDFUtil.allResourceValues(cspec, prop)) {
-            DSAPIComponent component = new DSAPIComponent(c, role);
+            DSAPIComponent component = new DSAPIComponent(c, role, api);
             // TODO extract isRequired flag
             components.add(component);
         }

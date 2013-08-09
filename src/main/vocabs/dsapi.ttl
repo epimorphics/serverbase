@@ -7,7 +7,7 @@
 @prefix :    <http://www.epimorphics.com/public/vocabulary/dsapi#> .
 
 
-# Simple vocabulary to enable datasets and dsds to be annoted for improved API access
+# Simple vocabulary to enable datasets and dsds to be annotated for improved API access
 
 :lowerBound a owl:DatatypeProperty;
     rdfs:label "lower bound"@en;
@@ -16,7 +16,6 @@
     
 :upperBound a owl:DatatypeProperty;
     rdfs:label "upper bound"@en;
-    rdfs:comment "Hiest value expected for a measure or other cube component"@en;
+    rdfs:comment "Highest value expected for a measure or other cube component"@en;
     .
-    
     

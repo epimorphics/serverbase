@@ -59,11 +59,11 @@ public class DSAPIComponent implements JSONWritable {
     protected boolean isMultiValued = false;
     protected String varname;
 
-    public DSAPIComponent(Resource spec) {
-        this(spec, null);
+    public DSAPIComponent(Resource spec, DSAPI api) {
+        this(spec, null, api);
     }
     
-    public DSAPIComponent(Resource spec, ComponentRole role) {
+    public DSAPIComponent(Resource spec, ComponentRole role, DSAPI api) {
         this.spec = spec;
         this.role = role;
         
@@ -71,17 +71,20 @@ public class DSAPIComponent implements JSONWritable {
         this.label = RDFUtil.getLabel(spec);
         this.description = RDFUtil.getDescription(spec);
         
-        analyzeRange(spec);
+        analyzeRange(spec, api);
     }
 
-    protected void analyzeRange(Resource spec) {
+    protected void analyzeRange(Resource spec, DSAPI api) {
         Resource rangeR = RDFUtil.getResourceValue(spec, RDFS.range);
         if (rangeR != null) {
             rangeURI = rangeR.getURI();
         }
         if (spec.hasProperty(Cube.codeList) || (rangeR != null && rangeR.equals(SKOS.Concept))) {
             rangeCategory = RangeCategory.Hierarchy;
-            // TODO work out hierarchy in use and create an API pointer for it
+            Resource codelist = RDFUtil.getResourceValue(spec, Cube.codeList);
+            if (codelist != null) {
+                range = new RangeHierarchyTop(codelist, api);
+            }
         } else {
             if (rangeR == null) {
                 if (spec.hasProperty(RDF.type, OWL.DatatypeProperty)) {
