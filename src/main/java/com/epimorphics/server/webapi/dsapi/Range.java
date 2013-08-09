@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.jena.atlas.json.JsonObject;
+import org.apache.jena.atlas.json.JsonString;
 import org.apache.jena.atlas.json.JsonValue;
 
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
@@ -50,6 +51,8 @@ public abstract class Range implements JSONWritable {
             if (spec.hasKey(GT)) range.setGt( new NumberValue( spec.get(GT)) );
             if (spec.hasKey(GE)) range.setGe( new NumberValue( spec.get(GE)) );
             return range;
+        } else if (spec.hasKey(BELOW)) {
+            return new RangeBelow( valueFromIDObject(spec.get(BELOW), rc) );
         }
         // TODO other range cases
         return null;
@@ -59,8 +62,11 @@ public abstract class Range implements JSONWritable {
         if (v instanceof JsonObject) {
             String id = ((JsonObject)v).get(ID).getAsString().value();
             return rc.valueFromID(id); 
+        } if (v instanceof JsonString) {
+            String id = v.getAsString().value();
+            return rc.valueFromID(id); 
         } else {
-            throw new EpiException("Expected JsonObject at: " + v);
+            throw new EpiException("Expected JsonObject or string at: " + v);
         }
     }
      

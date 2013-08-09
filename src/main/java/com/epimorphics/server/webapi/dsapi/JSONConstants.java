@@ -31,4 +31,5 @@ public class JSONConstants {
     public static final String LE = "le";
     public static final String GT = "gt";
     public static final String GE = "ge";
+    public static final String BELOW = "below";
 }
