@@ -7,12 +7,22 @@
  *
  *****************************************************************/
 
-package com.epimorphics.server.webapi;
+package com.epimorphics.server.webapi.dsapi;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.epimorphics.server.webapi.dsapi.ResourceCache;
+import com.epimorphics.server.core.ServiceConfig;
+import com.epimorphics.server.core.Store;
+import com.epimorphics.server.indexers.LuceneIndex;
+import com.epimorphics.server.indexers.LuceneResult;
+import com.epimorphics.server.webapi.DSAPIManager;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
+import com.epimorphics.util.EpiException;
+import com.epimorphics.vocabs.SKOS;
+import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
@@ -25,6 +35,7 @@ public class HierarchyAPI {
     public static final String COLLECTIONS_PARAM = "_collections";
     public static final String LEVELS_PARAM = "_levels";
     public static final String CHILDREN_PARAM = "_below";
+    public static final String TEXT_PARAM = "_text";
     
     protected DSAPIManager man;
     protected Resource codelist;
@@ -41,6 +52,8 @@ public class HierarchyAPI {
             return listLevels();
         } else if (params.containsKey(CHILDREN_PARAM)) {
             return listChildren( params.getFirst(CHILDREN_PARAM) );
+        } else if (params.containsKey(TEXT_PARAM)) {
+            return textSearch( params.getFirst(TEXT_PARAM) );
         } else {
             return listRoots();
         }
@@ -68,4 +81,29 @@ public class HierarchyAPI {
         return new ResourceList(query, "x", man);
     }
     
+    protected JSONWritable textSearch(String query) {
+        // TODO rewrite to use jena-text
+        // TODO remove dependency on magic indexer name
+        LuceneIndex index = ServiceConfig.get().getServiceAs("index", LuceneIndex.class);
+        if (index == null) {
+            throw new EpiException("No index configured for text search");
+        }
+        LuceneResult[] matches = index.search(query, 0, 1000);
+        Store store = man.getStore();
+        store.lock();
+        try {
+            List<Resource> codes = new ArrayList<>();
+            Model model = store.getUnionModel();
+            for (LuceneResult lr : matches) {
+                Resource r = model.getResource( lr.getURI() );
+                if (r.hasProperty(SKOS.inScheme, codelist)) {
+                    codes.add(r);
+                }
+            }
+            return new ResourceList(codes);
+        } finally {
+            store.unlock();
+        }
+    }
+
 }

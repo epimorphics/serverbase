@@ -7,7 +7,7 @@
  *
  *****************************************************************/
 
-package com.epimorphics.server.webapi;
+package com.epimorphics.server.webapi.dsapi;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -15,8 +15,7 @@ import java.util.List;
 
 import com.epimorphics.server.core.Store;
 import com.epimorphics.server.general.PrefixService;
-import com.epimorphics.server.webapi.dsapi.ResourceCache;
-import com.epimorphics.server.webapi.dsapi.Value;
+import com.epimorphics.server.webapi.DSAPIManager;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import com.epimorphics.util.PrefixUtils;
@@ -25,6 +24,7 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
  * Utility which issues a SPARQL query and returns a json serializable
@@ -35,12 +35,13 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class ResourceList implements JSONWritable {
-    protected List<Value> matches = new ArrayList<>();
+    protected List<Value> matches;
 
     public ResourceList(String query, String var, DSAPIManager man) {
+        matches = new ArrayList<>();
         String q = PrefixUtils.expandQuery(query, PrefixService.get().getPrefixes());
-        ResourceCache rc = ResourceCache.get();
         Store store = man.getStore();
+        ResourceCache rc = ResourceCache.get();
         store.lock();
         try {
             QueryExecution qexec = QueryExecutionFactory.create(q, store.getUnionModel());
@@ -61,6 +62,15 @@ public class ResourceList implements JSONWritable {
         }
     }
 
+    public ResourceList(List<Resource> resources) {
+        ResourceCache rc = ResourceCache.get();
+        matches = new ArrayList<>(resources.size());
+        for (Resource r : resources) {
+            matches.add( rc.valueFromResource(r) );
+        }
+    }
+    
+    
     @Override
     public void writeTo(JSFullWriter out) {
         out.startArray();

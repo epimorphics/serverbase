@@ -22,6 +22,7 @@ import com.epimorphics.server.core.ServiceConfig;
 import com.epimorphics.server.core.Store;
 import com.epimorphics.server.general.PrefixService;
 import com.epimorphics.server.webapi.dsapi.DSAPI;
+import com.epimorphics.server.webapi.dsapi.HierarchyAPI;
 import com.epimorphics.server.webapi.marshalling.JSFullWriter;
 import com.epimorphics.server.webapi.marshalling.JSONWritable;
 import com.epimorphics.util.EpiException;
