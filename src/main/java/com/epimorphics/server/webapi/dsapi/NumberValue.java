@@ -10,6 +10,7 @@
 package com.epimorphics.server.webapi.dsapi;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 import org.apache.jena.atlas.json.JsonValue;
 
@@ -33,6 +34,7 @@ public class NumberValue extends Value {
     
     public NumberValue(double d) {
         value = new BigDecimal(d);
+        value = value.round(MathContext.DECIMAL64);
     }
     
     public NumberValue(BigDecimal d) {
@@ -54,6 +56,7 @@ public class NumberValue extends Value {
     private void setFrom(Number val) {
         if (val instanceof Double || val instanceof Float) {
             value = new BigDecimal( ((Double)val).doubleValue() );
+            value = value.round(MathContext.DECIMAL64);
         } else if (val instanceof BigDecimal) {
             value = (BigDecimal)val;
         } else {
