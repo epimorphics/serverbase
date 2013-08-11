@@ -26,7 +26,7 @@ public class RangeBelow extends Range {
     }
     
     public String filterQuery(DSAPIComponent c) {
-        return String.format("%s %s ?%s. ?%s skos:broader + <%s>.",  SPARQLFilterQuery.OBS_VAR, c.getId(), c.getVarname(), c.getVarname(), parent.getUri());
+        return String.format("%s %s ?%s. ?%s skos:broader + <%s>.",  SPARQLFilterQuery.OBS_VAR, c.asSPARQL(), c.getVarname(), c.getVarname(), parent.getUri());
     }
 
     @Override

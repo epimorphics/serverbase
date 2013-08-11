@@ -42,4 +42,13 @@ public class SPARQLFilterQuery {
         PrefixMapping pm = PrefixService.get().getPrefixes();
         return PrefixUtils.expandQuery( query.toString() + "}", pm);
     }
+    
+    public static String idToSPARQL(String id) {
+        if (id.startsWith("http://") || id.startsWith("https://")) {
+            return "<" + id + ">"; 
+        } else {
+            // Assume it's a curie
+            return id;
+        }
+    }
 }

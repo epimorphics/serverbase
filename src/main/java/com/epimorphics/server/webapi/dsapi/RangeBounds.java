@@ -83,7 +83,7 @@ public class RangeBounds extends Range {
     public String filterQuery(DSAPIComponent c) {
         StringBuffer q = new StringBuffer();
         String vn = c.getVarname();
-        q.append( SPARQLFilterQuery.OBS_VAR + " " + c.getId() + " ?" + vn );
+        q.append( SPARQLFilterQuery.OBS_VAR + " " + c.asSPARQL() + " ?" + vn );
         q.append(" . ");
         q.append("FILTER(");
         boolean started = false;

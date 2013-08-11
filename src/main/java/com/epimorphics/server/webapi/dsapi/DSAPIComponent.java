@@ -133,7 +133,11 @@ public class DSAPIComponent implements JSONWritable {
     public String getId() {
         return id;
     }
-
+    
+    public String asSPARQL() {
+        return SPARQLFilterQuery.idToSPARQL(id);
+    }
+    
     @Override
     public void writeTo(JSFullWriter out) {
         out.startObject();
