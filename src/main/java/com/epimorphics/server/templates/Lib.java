@@ -51,7 +51,7 @@ import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.impl.LiteralImpl;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
 import com.hp.hpl.jena.sparql.util.FmtUtils;
-import com.hp.hpl.jena.sparql.util.NodeFactoryExtra;
+import com.hp.hpl.jena.sparql.util.NodeFactory;
 
 /**
  * Collection of utility functions to be made available
@@ -166,7 +166,8 @@ public class Lib {
      * Decode a serlialized RDFNode, not associated with any useful model
      */
     public static RDFNode deserialize(String ser) {
-        Node n = NodeFactoryExtra.parseNode(ser);
+//        Node n = NodeFactoryExtra.parseNode(ser);
+        Node n = NodeFactory.parseNode(ser);
         if (n.isLiteral()) {
             return new LiteralImpl(n, dummy);
         } else if (n.isURI()) {
