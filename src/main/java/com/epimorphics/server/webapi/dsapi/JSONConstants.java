@@ -32,5 +32,5 @@ public class JSONConstants {
     public static final String GT = "_gt";
     public static final String GE = "_ge";
     public static final String BELOW = "_below";
-    public static final String IN_COLLECTION = "_inCollection";
+    public static final String IN_COLLECTION = "_memberOf";
 }
