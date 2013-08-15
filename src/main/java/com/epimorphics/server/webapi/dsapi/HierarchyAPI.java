@@ -42,6 +42,7 @@ public class HierarchyAPI {
     public static final String BELOW_PARAM = "_below";
     public static final String TEXT_PARAM = "_text";
     public static final String CHILDREN_PARAM = "_children";
+    public static final String MEMBER_PARAM = "_member";
     public static final String PARENT_PARAM = "_parent";
     public static final String PATH_PARAM = "_path";
     
@@ -143,9 +144,9 @@ public class HierarchyAPI {
         JSONWritableObject result = new JSONWritableObject();
         addResourceDescription(result, resource);
         result.put(JSONConstants.API, man.getApiBase() + "/collection/" + resource.getId());
-        if (params.containsKey(TERMS_PARAM)) {
+        if (params.containsKey(MEMBER_PARAM)) {
             String query = String.format("SELECT ?x WHERE {<%s> skos:member ?x. ?x a skos:Concept . }", resource.getUri());
-            result.put(TERMS_PARAM, new ResourceList(query, "x", man, man.getApiBase() + "/code/"));
+            result.put(MEMBER_PARAM, new ResourceList(query, "x", man, man.getApiBase() + "/code/"));
         }
         if (params.containsKey(CHILDREN_PARAM)) {
             String query = String.format("SELECT ?x WHERE {<%s> skos:member ?x. ?x a skos:Collection . }", resource.getUri());
