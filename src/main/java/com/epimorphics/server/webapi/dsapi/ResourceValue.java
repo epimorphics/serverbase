@@ -21,13 +21,15 @@ import com.hp.hpl.jena.rdf.model.Resource;
  * URI) and a label. Sorting is based on labels. If no ID is explicitly
  * given then will default to attempting to use any global PrefixService 
  * to create a shortname.
- * 
+ * <p>If an API base is provided then the JSON representation will include
+ * an API parameter</p>.
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
 public class ResourceValue extends Value {
     protected String uri;
     protected String id;
     protected String label;
+    protected String apiBase;
     
     // TODO - should keep each lang label and be able to do query time lang-specific extraction?
     
@@ -86,6 +88,18 @@ public class ResourceValue extends Value {
     public String getLexicalForm() {
         return label;
     }
+    
+    public String getApiBase() {
+        return apiBase;
+    }
+
+    public void setApiBase(String apiBase) {
+        if (apiBase.endsWith("/")) {
+            this.apiBase = apiBase;
+        } else {
+            this.apiBase = apiBase + "/";
+        }
+    }
 
     @Override
     public void writeTo(JSFullWriter out) {
@@ -93,6 +107,9 @@ public class ResourceValue extends Value {
         out.pair("@id", id);
         out.pair("uri", uri);
         out.pair("label", label);
+        if (apiBase != null) {
+            out.pair("api", apiBase + id);
+        }
         out.finishObject();
     }
 

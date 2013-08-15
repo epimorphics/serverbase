@@ -11,7 +11,7 @@ package com.epimorphics.server.webapi.marshalling;
 
 
 /**
- * Signature for API objects which self-serlize to JSON using
+ * Signature for API objects which self-serliaze to JSON using
  * the Jena streaming JSON writers.
  * 
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>

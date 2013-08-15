@@ -38,25 +38,41 @@ public class ResourceList implements JSONWritable {
     protected List<Value> matches;
 
     public ResourceList(String query, String var, DSAPIManager man) {
+        this(query, var, man, null);
+    }
+    
+    public ResourceList(String query, String var, Store store, String apiBase) {
+        init(query, var, store, apiBase);
+    }
+    
+    private void init(String query, String var, Store store, String apiBase) {
         matches = new ArrayList<>();
         String q = PrefixUtils.expandQuery(query, PrefixService.get().getPrefixes());
-        Store store = man.getStore();
         ResourceCache rc = ResourceCache.get();
+        QueryExecution qexec = QueryExecutionFactory.create(q, store.getUnionModel());
+        try {
+            ResultSet results = qexec.execSelect();
+            while (results.hasNext()) {
+                QuerySolution soln = results.next();
+                RDFNode n = soln.get(var);
+                if (n != null) {
+                    Value v = rc.valueFromNode( n );
+                    if (apiBase != null && v instanceof ResourceValue) {
+                        ((ResourceValue)v).setApiBase(apiBase);
+                    }
+                    matches.add( v );
+                }
+            }
+        } finally {
+            qexec.close();
+        }
+    }
+    
+    public ResourceList(String query, String var, DSAPIManager man, String apiBase) {
+        Store store = man.getStore();
         store.lock();
         try {
-            QueryExecution qexec = QueryExecutionFactory.create(q, store.getUnionModel());
-            try {
-                ResultSet results = qexec.execSelect();
-                while (results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    RDFNode n = soln.get(var);
-                    if (n != null) {
-                        matches.add( rc.valueFromNode( n ) );
-                    }
-                }
-            } finally {
-                qexec.close();
-            }
+            init(query, var, store, apiBase);
         } finally {
             store.unlock();
         }
@@ -69,8 +85,26 @@ public class ResourceList implements JSONWritable {
             matches.add( rc.valueFromResource(r) );
         }
     }
+
+    public ResourceList(List<Resource> resources, String apiBase) {
+        ResourceCache rc = ResourceCache.get();
+        matches = new ArrayList<>(resources.size());
+        for (Resource r : resources) {
+            ResourceValue v = rc.valueFromResource(r);
+            v.setApiBase(apiBase);
+            matches.add( v );
+        }
+    }
     
     
+    public void setMatches(List<Value> matches) {
+        this.matches = matches;
+    }
+
+    public List<Value> getMatches() {
+        return matches;
+    }
+
     @Override
     public void writeTo(JSFullWriter out) {
         out.startArray();

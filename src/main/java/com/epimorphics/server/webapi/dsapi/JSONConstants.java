@@ -10,7 +10,7 @@
 package com.epimorphics.server.webapi.dsapi;
 
 public class JSONConstants {
-    public static final String ONEOF = "oneof";
+    public static final String ONEOF = "_oneof";
     public static final String ID = "@id";
     public static final String URI = "uri";
     public static final String LABEL = "label";
@@ -27,9 +27,10 @@ public class JSONConstants {
     public static final String DATA_API = "data-api";
     public static final String STRUCTURE_API = "structure-api";
     public static final String API = "api";
-    public static final String LT = "lt";
-    public static final String LE = "le";
-    public static final String GT = "gt";
-    public static final String GE = "ge";
-    public static final String BELOW = "below";
+    public static final String LT = "_lt";
+    public static final String LE = "_le";
+    public static final String GT = "_gt";
+    public static final String GE = "_ge";
+    public static final String BELOW = "_below";
+    public static final String IN_COLLECTION = "_inCollection";
 }

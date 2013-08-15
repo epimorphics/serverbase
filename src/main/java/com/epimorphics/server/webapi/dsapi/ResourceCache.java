@@ -27,7 +27,7 @@ import com.hp.hpl.jena.rdf.model.ResourceFactory;
  * Should be configured as a service with instances of a prefix service. The lookups are based
  * on the IDs which in turn are dependent upon the prefix service for stability.
  * Typically there will be only one ResourceCache in use and so a convenience method
- * to and return it is supplied.
+ * to return it is supplied.
  * 
  * @author <a href="mailto:dave@epimorphics.com">Dave Reynolds</a>
  */
@@ -99,10 +99,13 @@ public class ResourceCache extends ServiceBase implements Service {
 
     public synchronized ResourceValue valueFromResource(Resource r) {
         // TODO how to handle language coding here
-        String label = RDFUtil.getLabel(r);
         String id = idFor(r);
-        ResourceValue value = new ResourceValue(r.getURI(), id, label);
-        cache.put(id, value);
+        ResourceValue value = (ResourceValue) cache.get(id);
+        if (value == null) {
+            String label = RDFUtil.getLabel(r);
+            value = new ResourceValue(r.getURI(), id, label);
+            cache.put(id, value);
+        }
         return value;
     }
 

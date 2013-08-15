@@ -53,6 +53,8 @@ public abstract class Range implements JSONWritable {
             return range;
         } else if (spec.hasKey(BELOW)) {
             return new RangeBelow( valueFromIDObject(spec.get(BELOW), rc) );
+        } else if (spec.hasKey(IN_COLLECTION)) {
+            return new RangeCollection( valueFromIDObject(spec.get(IN_COLLECTION), rc) );
         }
         // TODO other range cases
         return null;
