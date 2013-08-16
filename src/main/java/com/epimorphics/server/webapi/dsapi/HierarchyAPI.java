@@ -42,7 +42,7 @@ public class HierarchyAPI {
     public static final String BELOW_PARAM = "_below";
     public static final String TEXT_PARAM = "_text";
     public static final String CHILDREN_PARAM = "_children";
-    public static final String MEMBER_PARAM = "_member";
+    public static final String MEMBER_PARAM = "_members";
     public static final String PARENT_PARAM = "_parent";
     public static final String PATH_PARAM = "_path";
     
