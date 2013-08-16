@@ -179,10 +179,10 @@ public class HierarchyAPI {
                 Model model = store.getUnionModel();
                 Resource term = model.getResource( resource.getUri() );
                 Resource parent = term.getPropertyResourceValue(SKOS.broader);
-                do {
+                while(parent != null) {
                     path.add( describeTerm(parent, store) );
                     parent = parent.getPropertyResourceValue(SKOS.broader);
-                } while(parent != null);
+                } 
                 Collections.reverse(path);
                 result.put(PATH_PARAM, path);
             } finally {
