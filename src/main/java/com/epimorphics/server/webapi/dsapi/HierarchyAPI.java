@@ -43,7 +43,7 @@ public class HierarchyAPI {
     public static final String TEXT_PARAM = "_text";
     public static final String CHILDREN_PARAM = "_children";
     public static final String MEMBER_PARAM = "_members";
-    public static final String PARENT_PARAM = "_parent";
+    public static final String PARENT_PARAM = "_parents";
     public static final String PATH_PARAM = "_path";
     
     protected DSAPIManager man;
@@ -53,6 +53,17 @@ public class HierarchyAPI {
     public HierarchyAPI(String id, DSAPIManager man) {
         this.man = man;
         resource = ResourceCache.get().valueFromID(id);
+        if (resource.getLabel() == null) {
+            // Get real label from store
+            Store store = man.getStore();
+            store.lock();
+            try {
+                Resource r = store.getUnionModel().getResource(resource.getUri());
+                resource = ResourceCache.get().valueFromResource(r);
+            } finally {
+                store.unlock();
+            }
+        }
     }
     
     public JSONWritable handleCodelistRequest(MultivaluedMap<String, String> params) {
