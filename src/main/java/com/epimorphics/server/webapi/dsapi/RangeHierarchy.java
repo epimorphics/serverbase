@@ -66,7 +66,7 @@ public class RangeHierarchy extends Range {
         } else if (collections.size() > 1) {
             query.append("{");
             for (Iterator<ResourceValue> i = collections.iterator(); i.hasNext();) {
-                query.append( String.format("{<%s> skos:member ?%s .}",  i.next(), c.getVarname()) );
+                query.append( String.format("{<%s> skos:member ?%s .}",  i.next().getUri(), c.getVarname()) );
                 if (i.hasNext()) {
                     query.append(" UNION ");
                 }
