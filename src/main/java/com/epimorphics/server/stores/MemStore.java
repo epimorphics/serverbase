@@ -76,7 +76,7 @@ public class MemStore extends StoreBase {
             base += qEndpoint;
             DatasetRef ds = new DatasetRef();
             ds.name = qEndpoint;
-            ds.queryEP.add( base + "/query" );
+//            ds.queryEP.add( base + "/query" );
             ds.dataset = dataset.asDatasetGraph();
             DatasetRegistry.get().put(base, ds);
             log.info("Installing SPARQL query endpoint at " + base + "/query");
