@@ -107,11 +107,12 @@
       <exclusions>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-server</artifactId>
+          <artifactId>jetty-servlet</artifactId>
         </exclusion>
+      <!-- 
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-servlet</artifactId>
+          <artifactId>jetty-server</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
@@ -121,8 +122,9 @@
           <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-xml</artifactId>
         </exclusion>
+     -->
       </exclusions>
-    </dependency>
+     </dependency>
     <!-- 
     <dependency>
       <groupId>org.apache.jena</groupId>

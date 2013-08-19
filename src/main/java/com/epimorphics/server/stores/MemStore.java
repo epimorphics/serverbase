@@ -29,8 +29,6 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 
-import org.apache.jena.fuseki.server.DatasetRef;
-import org.apache.jena.fuseki.server.DatasetRegistry;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.WebContent;
 import org.slf4j.Logger;
@@ -52,9 +50,6 @@ import com.hp.hpl.jena.rdf.model.ModelFactory;
 public class MemStore extends StoreBase {
     static final Logger log = LoggerFactory.getLogger( MemStore.class );
 
-    public static final String QUERY_ENDPOINT_PARAM    = "ep";
-
-    protected Dataset dataset;
     protected Model unionModel;
     protected MultiUnion unionGraph;
     
@@ -66,21 +61,9 @@ public class MemStore extends StoreBase {
         unionGraph = new MultiUnion();
         unionModel = ModelFactory.createModelForGraph(unionGraph);
         dataset.setDefaultModel(unionModel);
-
-        String qEndpoint = config.get(QUERY_ENDPOINT_PARAM);
-        if (qEndpoint != null) {
-            String base = context.getContextPath();
-            if ( ! base.endsWith("/")) {
-                base += "/";
-            }
-            base += qEndpoint;
-            DatasetRef ds = new DatasetRef();
-            ds.name = qEndpoint;
-//            ds.queryEP.add( base + "/query" );
-            ds.dataset = dataset.asDatasetGraph();
-            DatasetRegistry.get().put(base, ds);
-            log.info("Installing SPARQL query endpoint at " + base + "/query");
-        }
+        
+        installJenaText();
+        installQueryEndpoint(context);
     }
 
     @Override

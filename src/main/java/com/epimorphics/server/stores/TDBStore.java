@@ -27,8 +27,6 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 
-import org.apache.jena.fuseki.server.DatasetRef;
-import org.apache.jena.fuseki.server.DatasetRegistry;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.WebContent;
 import org.slf4j.Logger;
@@ -63,8 +61,6 @@ public class TDBStore extends StoreBase {
     public static final String UNION_PARAM    = "union";
     public static final String QUERY_ENDPOINT_PARAM    = "ep";
 
-    protected Dataset dataset;
-
     @Override
     public void init(Map<String, String> config, ServletContext context) {
         super.init(config, context);
@@ -80,20 +76,8 @@ public class TDBStore extends StoreBase {
             TDB.getContext().set(TDB.symUnionDefaultGraph, true) ;
         }
 
-        String qEndpoint = config.get(QUERY_ENDPOINT_PARAM);
-        if (qEndpoint != null) {
-            String base = context.getContextPath();
-            if ( ! base.endsWith("/")) {
-                base += "/";
-            }
-            base += qEndpoint;
-            DatasetRef ds = new DatasetRef();
-            ds.name = qEndpoint;
-//            ds.queryEP.add( base + "/query" );
-            ds.dataset = dataset.asDatasetGraph();
-            DatasetRegistry.get().put(base, ds);
-            log.info("Installing SPARQL query endpoint at " + base + "/query");
-        }
+        installJenaText();
+        installQueryEndpoint(context);
     }
 
     @Override

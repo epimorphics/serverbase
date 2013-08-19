@@ -32,6 +32,13 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 
+import org.apache.jena.fuseki.server.DatasetRef;
+import org.apache.jena.fuseki.server.DatasetRegistry;
+import org.apache.jena.query.text.EntityDefinition;
+import org.apache.jena.query.text.TextDatasetFactory;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.RAMDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +56,7 @@ import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.shared.Lock;
 import com.hp.hpl.jena.util.FileUtils;
+import com.hp.hpl.jena.vocabulary.RDFS;
 
 /**
  * Base implementation of a generic store. Supports  linking to indexer and mutator services.
@@ -61,12 +69,16 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
 
     public static final String INDEXER_PARAM = "indexer";
     public static final String MUTATOR_PARAM = "mutator";
+    public static final String JENA_TEXT_PARAM = "jena-text";
     public static final String LOG_PARAM = "log";
 
     public static final String ADD_ACTION = "ADD";
     public static final String UPDATE_ACTION = "UPDATE";
     public static final String DELETE_ACTION = "DELETE";
+    
+    public static final String QUERY_ENDPOINT_PARAM    = "ep";
 
+    protected Dataset dataset;
     protected volatile List<Indexer> indexers = new ArrayList<Indexer>();
     protected volatile List<Mutator> mutators = new ArrayList<Mutator>();
     protected String logDirectory;
@@ -82,6 +94,51 @@ public abstract class StoreBase extends ServiceBase implements Store, Service {
         }
     }
 
+    /**
+     * Install a jena-text dataset wrapper round this store.
+     * This is an alternative to the indexer system.
+     */
+    protected void installJenaText() {
+        if (config.containsKey(JENA_TEXT_PARAM)) {
+            String dirname = getRequiredFileParam(JENA_TEXT_PARAM);
+            Directory dir = null;
+            if (dirname.equals("mem")) {
+                dir =  new RAMDirectory();
+            } else {
+                try {
+                    File dirf = new File(dirname);
+                    dir = FSDirectory.open(dirf);
+                } catch (IOException e) {
+                    throw new EpiException("Failed to create jena-text lucence index area", e);
+                }
+            }
+            EntityDefinition entDef = new EntityDefinition("uri", "text", RDFS.label.asNode()) ;
+            dataset = TextDatasetFactory.createLucene(dataset, dir, entDef) ;
+        }
+    }
+    
+    /**
+     * Configure a Fuseki query servlet for this store. The
+     * web.xml file needs to map the servlet to a matching context path.
+     */
+    protected void installQueryEndpoint( ServletContext context) {
+        String qEndpoint = config.get(QUERY_ENDPOINT_PARAM);
+        if (qEndpoint != null) {
+            String base = context.getContextPath();
+            if ( ! base.endsWith("/")) {
+                base += "/";
+            }
+            base += qEndpoint;
+            DatasetRef ds = new DatasetRef();
+            ds.name = qEndpoint;
+            ds.query.endpoints.add("query" ); 
+            ds.init();
+            ds.dataset = dataset.asDatasetGraph();
+            DatasetRegistry.get().put(base, ds);
+            log.info("Installing SPARQL query endpoint at " + base + "/query");
+        }
+    }
+    
     @Override
     public void postInit() {
         String indexerNames = config.get(INDEXER_PARAM);
