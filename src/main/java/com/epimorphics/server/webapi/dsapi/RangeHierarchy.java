@@ -25,7 +25,7 @@ import com.epimorphics.server.webapi.marshalling.JSFullWriter;
  */
 public class RangeHierarchy extends Range {
     protected List<ResourceValue> parents = new ArrayList<>();
-    protected ResourceValue collection;
+    protected List<ResourceValue> collections = new ArrayList<>();
     
     public RangeHierarchy() {
     }
@@ -34,8 +34,8 @@ public class RangeHierarchy extends Range {
         parents.add(parent);
     }
     
-    public void setCollection(ResourceValue collection) {
-        this.collection = collection;
+    public void addCollection(ResourceValue collection) {
+        collections.add( collection );
     }
     
     public String filterQuery(DSAPIComponent c) {
@@ -60,8 +60,18 @@ public class RangeHierarchy extends Range {
         }
         
         // Any collection filters
-        if (collection != null) {
-            query.append( String.format("<%s> skos:member ?%s .",  collection.getUri(), c.getVarname()) );
+        if (collections.size() == 1) {
+            query.append( String.format("<%s> skos:member ?%s .",  collections.get(0).getUri(), c.getVarname()) );
+
+        } else if (collections.size() > 1) {
+            query.append("{");
+            for (Iterator<ResourceValue> i = collections.iterator(); i.hasNext();) {
+                query.append( String.format("{<%s> skos:member ?%s .}",  i.next(), c.getVarname()) );
+                if (i.hasNext()) {
+                    query.append(" UNION ");
+                }
+            }
+            query.append("}");
         }
 
         return query.toString();
@@ -70,24 +80,20 @@ public class RangeHierarchy extends Range {
     @Override
     public void writeTo(JSFullWriter out) {
         out.startObject();
-        if (!parents.isEmpty()) {
-            out.key(BELOW);
-            if (parents.size() == 1) {
-                parents.get(0).writeTo(out);
-            } else {
-                out.startArray();
-                for (Iterator<ResourceValue> i = parents.iterator(); i.hasNext();) {
-                    i.next().writeTo(out);
-                    if (i.hasNext()) out.arraySep();
-                }
-                out.finishArray();
-            }
-        }
-        if (collection != null) {
-            out.key(IN_COLLECTION);
-            collection.writeTo(out);
-        }
+        writeArray(BELOW, parents, out);
+        writeArray(IN_COLLECTION, collections, out);
         out.finishObject();
     }
 
+    private void writeArray(String key, List<ResourceValue> arr, JSFullWriter out) {
+        if (!arr.isEmpty()) {
+            out.key(key);
+            out.startArray();
+            for (Iterator<ResourceValue> i = arr.iterator(); i.hasNext();) {
+                i.next().writeTo(out);
+                if (i.hasNext()) out.arraySep();
+            }
+            out.finishArray();
+        }
+    }
 }

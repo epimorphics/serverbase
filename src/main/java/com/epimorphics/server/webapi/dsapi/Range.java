@@ -54,7 +54,14 @@ public abstract class Range implements JSONWritable {
         } else if (spec.hasKey(BELOW) || spec.hasKey(IN_COLLECTION)) {
             RangeHierarchy rh = new RangeHierarchy();
             if (spec.hasKey(IN_COLLECTION)) {
-                rh.setCollection( valueFromIDObject(spec.get(IN_COLLECTION), rc) );
+                JsonValue vals = spec.get(IN_COLLECTION);
+                if (vals.isArray()) {
+                    for (Iterator<JsonValue> i = vals.getAsArray().iterator(); i.hasNext();) {
+                        rh.addCollection( valueFromIDObject(i.next(), rc) );
+                    }
+                } else {
+                    rh.addCollection( valueFromIDObject(vals, rc) );
+                }
             }
             if (spec.hasKey(BELOW)) {
                 JsonValue vals = spec.get(BELOW);
