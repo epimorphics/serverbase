@@ -46,12 +46,12 @@ public class RangeHierarchy extends Range {
         
         // Any root term filters
         if (parents.size() == 1) {
-            query.append( String.format("?%s skos:broader + <%s>.",  c.getVarname(), parents.get(0).getUri()) );
+            query.append( String.format("?%s skos:broader * <%s>.",  c.getVarname(), parents.get(0).getUri()) );
 
         } else if (parents.size() > 1) {
             query.append("{");
             for (Iterator<ResourceValue> i = parents.iterator(); i.hasNext();) {
-                query.append( String.format("{?%s skos:broader + <%s>.}",  c.getVarname(), i.next().getUri()) );
+                query.append( String.format("{?%s skos:broader * <%s>.}",  c.getVarname(), i.next().getUri()) );
                 if (i.hasNext()) {
                     query.append(" UNION ");
                 }
