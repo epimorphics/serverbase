@@ -96,7 +96,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.jena</groupId>
-      <artifactId>apache-jena</artifactId>
+      <artifactId>apache-jena-libs</artifactId>
       <type>pom</type>
       <version>2.10.2-SNAPSHOT</version>
     </dependency>    
