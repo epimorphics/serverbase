@@ -6,7 +6,7 @@
   <name>Server base utilities</name>
 
   <scm>
-    <developerConnection>scm:git:ssh://git@codebasehq.com/epimorphics/data-fabric/serverbase.git</developerConnection>
+    <developerConnection>scm:git:ssh://git@github.com/epimorphics/serverbase.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -86,7 +86,7 @@
     <dependency>
       <groupId>com.epimorphics</groupId>
       <artifactId>lib</artifactId>
-      <version>0.0.17-SNAPSHOT</version>
+      <version>0.0.17</version>
     </dependency>
         <dependency>
       <groupId>javax.servlet</groupId>
@@ -96,14 +96,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.jena</groupId>
-      <artifactId>apache-jena-libs</artifactId>
-      <type>pom</type>
-      <version>2.10.2-SNAPSHOT</version>
-    </dependency>    
-    <dependency>
-      <groupId>org.apache.jena</groupId>
       <artifactId>jena-fuseki</artifactId>
-      <version>0.2.8-SNAPSHOT</version>
+      <version>1.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
