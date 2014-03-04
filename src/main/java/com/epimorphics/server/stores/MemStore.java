@@ -58,7 +58,8 @@ public class MemStore extends StoreBase {
         super.init(config, context);
         dataset = DatasetFactory.createMem();
         
-        unionGraph = new MultiUnion();
+        Model dflt = ModelFactory.createDefaultModel();
+        unionGraph = new MultiUnion( new Graph[]{dflt.getGraph()} );
         unionModel = ModelFactory.createModelForGraph(unionGraph);
         dataset.setDefaultModel(unionModel);
         
