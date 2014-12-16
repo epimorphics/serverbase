@@ -28,7 +28,7 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 
 import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.WebContent;
+import org.apache.jena.riot.RDFLanguages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +112,7 @@ public class TDBStore extends StoreBase {
     @Override
     protected void doAddGraph(String graphname, InputStream input,
             String mimeType) {
-        Lang lang = WebContent.contentTypeToLang(mimeType);
+        Lang lang = RDFLanguages.contentTypeToLang(mimeType);
         if (lang == null) {
             throw new EpiException("Cannot read MIME type: " + mimeType);
         }
